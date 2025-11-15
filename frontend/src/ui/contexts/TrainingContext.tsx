@@ -56,8 +56,8 @@ interface ITrainingContext {
   // Actions
   uploadAssets: (
     projectName: string,
-    datasetPath: string,
-    modelPath: string
+    datasetPath: string | File,
+    modelPath: string | File
   ) => Promise<void>;
   payAndInitialize: (tokenAmount: string) => Promise<string | number | void>;
   beginFinalTraining: () => Promise<string | number | void>;
@@ -134,8 +134,8 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
 
   const uploadAssets = async (
     projectName: string,
-    datasetPath: string,
-    modelPath: string
+    datasetPath: string | File,
+    modelPath: string | File
   ) => {
     if (!isConfigured) {
       toast.error('Configuration Required', {
@@ -145,6 +145,32 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
+    // Check if we're in web mode with File objects
+    const isElectron = typeof window !== 'undefined' && window.electronAPI;
+    const isWebModeWithFiles =
+      !isElectron && (datasetPath instanceof File || modelPath instanceof File);
+
+    // Validate file types based on mode
+    if (isElectron) {
+      // Electron mode: expect string paths
+      if (datasetPath instanceof File || modelPath instanceof File) {
+        toast.error('Invalid File Type', {
+          description:
+            'File objects are only supported in web mode. Please use file paths in Electron mode.',
+        });
+        return;
+      }
+    } else {
+      // Web mode: expect File objects
+      if (typeof datasetPath === 'string' || typeof modelPath === 'string') {
+        toast.error('Invalid File Type', {
+          description:
+            'File paths are only supported in Electron mode. Please use file selection in web mode.',
+        });
+        return;
+      }
+    }
+    
     const jobId = `proj_${Date.now()}`;
     setActiveJobId(jobId);
     setProjectName(projectName);
@@ -160,6 +186,9 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
       const { datasetHash, chunkCount } = await uploadDatasetToAkave(
         datasetPath
       );
+
+      console.log('datasetHash: ', datasetHash);
+      console.log('chunkCount: ', chunkCount);
 
       toast.loading('Uploading model to Akave...', {
         id: activeToastId.current,

@@ -10,7 +10,7 @@ import type { ISettings } from '../renderer';
 
 interface ISettingsContext {
   settings: ISettings;
-  saveSettings: (newSettings: ISettings) => void;
+  saveSettings: (newSettings: ISettings) => Promise<void>;
   isConfigured: boolean;
 }
 

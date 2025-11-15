@@ -1,42 +1,87 @@
 import { UploadCloud, File as FileIcon, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 interface FileUploadProps {
   label: string;
   fileType: string;
-  onFileSelect: (filePath: string | null) => void;
+  onFileSelect: (file: string | File | null) => void;
 }
 
 const FileUpload = ({ label, fileType, onFileSelect }: FileUploadProps) => {
-  const [filePath, setFilePath] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<string | File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const isElectron = typeof window !== 'undefined' && window.electronAPI;
 
   const handleFileSelect = async () => {
-    const selectedPath = await window.electronAPI.openFileDialog();
-    if (selectedPath) {
-      setFilePath(selectedPath);
-      onFileSelect(selectedPath);
+    if (isElectron) {
+      // Electron mode: use native file dialog
+      const selectedPath = await window.electronAPI.openFileDialog();
+      if (selectedPath) {
+        setSelectedFile(selectedPath);
+        onFileSelect(selectedPath);
+      }
+    } else {
+      // Web mode: trigger file input
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleWebFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      onFileSelect(file);
+    }
+    // Reset input value to allow selecting the same file again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
   const removeFile = () => {
-    setFilePath(null);
+    setSelectedFile(null);
     onFileSelect(null);
+    // Reset file input if in web mode
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
-  const fileName = filePath ? filePath.split(/[\\/]/).pop() : '';
+  const fileName = selectedFile
+    ? typeof selectedFile === 'string'
+      ? selectedFile.split(/[\\/]/).pop()
+      : selectedFile.name
+    : '';
 
   return (
     <div>
       <label className='block text-sm font-medium text-text-secondary mb-2'>
         {label}
       </label>
-      {filePath ? (
+      {/* Hidden file input for web browser */}
+      {!isElectron && (
+        <input
+          ref={fileInputRef}
+          type='file'
+          className='hidden'
+          onChange={handleWebFileChange}
+          accept={
+            fileType.toLowerCase().includes('csv')
+              ? '.csv'
+              : fileType.toLowerCase().includes('python') ||
+                fileType.toLowerCase().includes('script')
+                ? '.py'
+                : undefined
+          }
+        />
+      )}
+      {selectedFile ? (
         <div className='flex items-center justify-between bg-background p-3 rounded-lg border border-border'>
           <div className='flex items-center gap-3 overflow-hidden'>
-            <FileIcon className='text-primary flex-shrink-0' size={20} />
+            <FileIcon className='text-primary shrink-0' size={20} />
             <span
               className='text-text-primary text-sm truncate'
-              title={fileName}
+              title={fileName || ''}
             >
               {fileName}
             </span>

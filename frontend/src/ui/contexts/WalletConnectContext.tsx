@@ -20,9 +20,9 @@ interface IWalletContext {
 
 const defaultValue: IWalletContext = {
   accountId: '',
-  setAccountId: () => {},
+  setAccountId: () => { },
   isConnected: false,
-  setIsConnected: () => {},
+  setIsConnected: () => { },
   balance: null,
 };
 

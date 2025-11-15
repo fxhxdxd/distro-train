@@ -1,0 +1,35 @@
+Metadata-Version: 2.4
+Name: p2p-fedlearn
+Version: 0.1.0
+Summary: Federated Learning over P2P network using py-libp2p, IPFS, and Hedera
+Author-email: Your Name <you@example.com>
+Requires-Python: <=3.14,>=3.11
+Requires-Dist: trio>=0.25
+Requires-Dist: pinata==0.0.1
+Requires-Dist: python-dotenv
+Requires-Dist: pytest
+Requires-Dist: rich
+Requires-Dist: trio-util
+Requires-Dist: pandas
+Requires-Dist: scikit-learn
+Requires-Dist: hedera-sdk-py
+Requires-Dist: protobuf
+Requires-Dist: grpcio-tools==1.68.1
+Requires-Dist: grpcio==1.68.1
+Requires-Dist: cryptography==44.0.0
+Requires-Dist: python-dotenv==1.0.1
+Requires-Dist: requests==2.32.3
+Requires-Dist: pycryptodome==3.23.0
+Requires-Dist: eth-abi==5.2.0
+Requires-Dist: rlp>=4.0.0
+Requires-Dist: eth-keys==0.5.1
+Requires-Dist: quart-trio
+Requires-Dist: hypercorn[trio]
+Requires-Dist: prompt_toolkit
+Requires-Dist: cryptography
+Provides-Extra: p2p
+Requires-Dist: libp2p@ git+https://github.com/lla-dane/py-libp2p.git@fed-learn ; extra == "p2p"
+Provides-Extra: dev
+Requires-Dist: black; extra == "dev"
+Requires-Dist: isort; extra == "dev"
+Requires-Dist: ruff; extra == "dev"

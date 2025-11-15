@@ -9,8 +9,8 @@ import { checkTaskStatus } from '../../utils/hederaHelper';
 export const UploadPhase = () => {
   const { uploadAssets, isLoading } = useTraining();
   const [projectName, setProjectName] = useState('');
-  const [datasetFile, setDatasetFile] = useState<string | null>(null);
-  const [modelFile, setModelFile] = useState<string | null>(null);
+  const [datasetFile, setDatasetFile] = useState<string | File | null>(null);
+  const [modelFile, setModelFile] = useState<string | File | null>(null);
   const contractId = '0.0.6913120';
 
   const handleSubmit = (e: React.FormEvent) => {
