@@ -67,7 +67,7 @@ from logs import setup_logging
 load_dotenv()
 logger = setup_logging("coordinator")
 
-env_path = Path("..") / ".env"
+env_path = Path(__file__).parent / ".env"
 GOSSIPSUB_PROTOCOL_ID = TProtocol("/meshsub/1.0.0")
 FED_LEARNING_MESH = "fed-learn"
 PUBLIC_IP = os.getenv("IP")
@@ -100,11 +100,17 @@ def load_keypair_from_env(env_path):
     env = {}
     with open(env_path) as f:
         for line in f:
+            if not line.strip() or "=" not in line:
+                continue
             k, v = line.strip().split("=", 1)
             env[k] = v
 
-    priv_b64 = env["BOOTSTRAP_PRIVATE_KEY"]
-    pub_b64 = env["BOOTSTRAP_PUBLIC_KEY"]
+    priv_b64 = env.get("BOOTSTRAP_PRIVATE_KEY", "")
+    pub_b64 = env.get("BOOTSTRAP_PUBLIC_KEY", "")
+
+    # Return None if keys are not set
+    if not priv_b64 or not pub_b64:
+        return None
 
     priv_bytes = base64.b64decode(priv_b64)
     pub_bytes = base64.b64decode(pub_b64)
@@ -136,9 +142,14 @@ class Node:
 
         if role == "bootstrap":
             key_pair = load_keypair_from_env(env_path)
-            self.host = new_host(
-                key_pair=key_pair, muxer_opt={MPLEX_PROTOCOL_ID: Mplex}
-            )
+            if key_pair:
+                self.host = new_host(
+                    key_pair=key_pair, muxer_opt={MPLEX_PROTOCOL_ID: Mplex}
+                )
+            else:
+                # Generate new keypair if not provided in .env
+                logger.warning("Bootstrap keys not found in .env, generating new keypair")
+                self.host = new_host(muxer_opt={MPLEX_PROTOCOL_ID: Mplex})
         else:
             self.host = new_host(muxer_opt={MPLEX_PROTOCOL_ID: Mplex})
 
