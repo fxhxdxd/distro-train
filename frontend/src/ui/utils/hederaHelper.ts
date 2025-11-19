@@ -13,13 +13,16 @@ import {
   CONTRACT_ID,
   privateKeyPem,
 } from './constant';
+import { PrivateKey } from '@hashgraph/sdk';
+
 
 export const getTaskId = async () => {
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
   await delay(2000); // Wait for 2 seconds
   const client = Client.forTestnet();
-  client.setOperator(OPERATOR_ID, OPERATOR_KEY);
+  const operatorKey = PrivateKey.fromStringECDSA(OPERATOR_KEY);
+  client.setOperator(OPERATOR_ID, operatorKey);
 
   const tx_get = new ContractCallQuery()
     .setContractId(CONTRACT_ID)
@@ -34,7 +37,8 @@ export const getTaskId = async () => {
 export const checkTaskStatus = async (taskId: string): Promise<boolean> => {
   try {
     const client = Client.forTestnet();
-    client.setOperator(OPERATOR_ID, OPERATOR_KEY);
+    const operatorKey = PrivateKey.fromStringECDSA(OPERATOR_KEY);
+    client.setOperator(OPERATOR_ID, operatorKey);
     const query = new ContractCallQuery()
       .setContractId(CONTRACT_ID)
       .setGas(1_000_000)
