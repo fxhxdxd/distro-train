@@ -866,9 +866,19 @@ class Node:
         return app
 
     async def api_server(self):
-        port = (
-            9000 if self.role == "bootstrap" or IS_CLOUD == "True" else find_free_port()
-        )
+        # Port assignment by role:
+        # - bootstrap: 9000 (monitoring/status)
+        # - client: 9001 (training commands from frontend)
+        # - trainer: no API server needed
+        if self.role == "bootstrap":
+            port = 9000
+        elif self.role == "client":
+            port = 9001
+        else:
+            # Trainers don't need API server, use random port if needed
+            port = find_free_port()
+
+        logger.info(f"Starting API server on port {port} for {self.role} node")
         app = self.create_app()
         config = Config()
         config.bind = [f"0.0.0.0:{port}"]

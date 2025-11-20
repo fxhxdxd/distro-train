@@ -36,7 +36,7 @@ interface TrainResponse {
 }
 
 const apiClient = axios.create({
-  baseURL: 'http://0.0.0.0:9000',
+  baseURL: 'http://0.0.0.0:9001',  // CLIENT node API (bootstrap is on 9000)
   headers: {
     'Content-Type': 'application/json',
   },
