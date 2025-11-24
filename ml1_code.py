@@ -3,8 +3,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
-# dataset is already provided by exec_globals in train_on_chunk
-df = pd.read_csv("./dataset.csv")  # noqa: F821
+# Use DATASET_PATH injected by train_on_chunk execution context
+# Falls back to "./dataset.csv" for backward compatibility
+dataset_path = DATASET_PATH if 'DATASET_PATH' in dir() else "./dataset.csv"  # noqa: F821
+df = pd.read_csv(dataset_path)
 
 if "id" in df.columns:
     df = df.drop(columns=["id"])

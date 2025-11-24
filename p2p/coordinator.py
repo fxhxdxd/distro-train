@@ -178,6 +178,7 @@ class Node:
         self.is_subscribed = False
         self.training_topic = None
         self.subscribed_topics = []
+        self.current_task_id = None  # Store task ID for contract submission
 
         # Send/Receive channels
         self.send_channel, self.receive_channel = trio.open_memory_channel(100)
@@ -337,25 +338,48 @@ class Node:
             handle.join()
             print("Subscription cancelled. Exiting")
 
-    def publish_on_chain(self, task_id, cipher1, cipher2, cipher3):
-        receipt = (
-            ContractExecuteTransaction()
-            .set_contract_id(self.contract_id)
-            .set_gas(2000000)
-            .set_function(
-                "submitWeights",
-                ContractFunctionParameters()
-                .add_uint256(task_id)
-                .add_string(cipher1)
-                .add_string(cipher2)
-                .add_string(cipher3),
-            )
-            .execute(self.client)
-        )
+    def publish_on_chain(self, task_id, weights_hash):
+        # Log submission details for debugging
+        logger.info(f"Submitting weights to blockchain - Task ID: {task_id}")
+        logger.debug(f"Contract ID: {self.contract_id}")
+        logger.debug(f"Operator ID: {self.operator_id}")
+        logger.debug(f"Weights hash length: {len(weights_hash)}")
+        logger.debug(f"Weights hash: {weights_hash}")
 
-        if receipt.status != ResponseCode.SUCCESS:
-            status_message = ResponseCode(receipt.status).name
-            raise Exception(f"Transaction failed with status: {status_message}")
+        try:
+            # Build and sign transaction explicitly
+            transaction = (
+                ContractExecuteTransaction()
+                .set_contract_id(self.contract_id)
+                .set_gas(5000000)  # 5M gas should be sufficient for a single string
+                .set_function(
+                    "submitWeights",
+                    ContractFunctionParameters()
+                    .add_uint256(task_id)
+                    .add_string(weights_hash),
+                )
+                .freeze_with(self.client)
+                .sign(self.operator_key)
+            )
+
+            logger.info("Transaction built and signed, executing...")
+            receipt = transaction.execute(self.client)
+
+            if receipt.status != ResponseCode.SUCCESS:
+                status_message = ResponseCode(receipt.status).name
+                logger.error(f"Contract execution failed: {status_message}")
+                logger.error(f"Task ID was: {task_id}")
+                raise Exception(f"Transaction failed with status: {status_message}")
+
+            logger.info(f"✅ Weights successfully submitted to blockchain for task {task_id}")
+            msg = f"Weights submitted to blockchain successfully"
+            self.submit_hcs_message(msg)
+
+        except Exception as e:
+            logger.error(f"Exception during blockchain submission: {e}")
+            msg = f"Failed to submit weights to blockchain: {str(e)}"
+            self.submit_hcs_message(msg)
+            raise
 
     async def command_executor(self, nursery):
         logger.warning("Starting command executor loop")
@@ -433,6 +457,23 @@ class Node:
                         assignments: dict = ast.literal_eval(parts[3])
                         node_id: str = self.host.get_id()
 
+                        # Store task ID from the current training topic
+                        try:
+                            self.current_task_id = int(self.subscribed_topics[-1])
+                            logger.debug(f"Task ID stored: {self.current_task_id}")
+                        except (ValueError, IndexError) as e:
+                            logger.error(f"Failed to parse task ID from topic '{self.subscribed_topics[-1]}': {e}")
+                            # Try to extract numeric part if topic is like "proj_12345"
+                            topic = self.subscribed_topics[-1] if self.subscribed_topics else ""
+                            import re
+                            match = re.search(r'\d+', topic)
+                            if match:
+                                self.current_task_id = int(match.group())
+                                logger.info(f"Extracted task ID from topic: {self.current_task_id}")
+                            else:
+                                logger.error(f"Could not extract numeric task ID from topic: {topic}")
+                                continue
+
                         for k, v in assignments.items():
                             if k == node_id:
                                 for chunk_cid in v:
@@ -444,54 +485,31 @@ class Node:
                                     weights_url = await self.ml_trainer.train_on_chunk(
                                         chunk_cid, model_hash, self.send_channel
                                     )
-                                    weights_url = str(weights_url).encode("utf-8")
+                                    weights_url_str = str(weights_url)
 
                                     if weights_url:
-                                        # Split weights url in 3 parts and encrypt them
-                                        url_size = len(weights_url) // 3
-                                        part1 = weights_url[:url_size]
-                                        part2 = weights_url[url_size : 2 * url_size]
-                                        part3 = weights_url[2 * url_size :]
+                                        # Extract Akave hash from presigned URL
+                                        # Format: https://o3-rc2.akave.xyz/akave-bucket/HASH?X-Amz-...
+                                        # Extract: HASH only
+                                        try:
+                                            # Split by '/' and get the last part before '?'
+                                            akave_hash = weights_url_str.split('/')[-1].split('?')[0]
+                                            logger.info(f"Extracted Akave hash: {akave_hash}")
+                                        except Exception as e:
+                                            logger.error(f"Failed to extract Akave hash from URL: {e}")
+                                            logger.error(f"URL was: {weights_url_str}")
+                                            akave_hash = weights_url_str  # Fallback to full URL if extraction fails
 
-                                        cipher1 = self.client_public_key.encrypt(
-                                            part1,
-                                            padding.OAEP(
-                                                mgf=padding.MGF1(
-                                                    algorithm=hashes.SHA256()
-                                                ),
-                                                algorithm=hashes.SHA256(),
-                                                label=None,
-                                            ),
-                                        )
-
-                                        cipher2 = self.client_public_key.encrypt(
-                                            part2,
-                                            padding.OAEP(
-                                                mgf=padding.MGF1(
-                                                    algorithm=hashes.SHA256()
-                                                ),
-                                                algorithm=hashes.SHA256(),
-                                                label=None,
-                                            ),
-                                        )
-
-                                        cipher3 = self.client_public_key.encrypt(
-                                            part3,
-                                            padding.OAEP(
-                                                mgf=padding.MGF1(
-                                                    algorithm=hashes.SHA256()
-                                                ),
-                                                algorithm=hashes.SHA256(),
-                                                label=None,
-                                            ),
-                                        )
-
-                                        self.publish_on_chain(
-                                            int(self.subscribed_topics[-1]),
-                                            base64.b64encode(cipher1).decode("utf-8"),
-                                            base64.b64encode(cipher2).decode("utf-8"),
-                                            base64.b64encode(cipher3).decode("utf-8"),
-                                        )
+                                        # Use the stored task ID instead of parsing topic
+                                        if self.current_task_id is None:
+                                            logger.error("Task ID not set, cannot submit weights to blockchain")
+                                            msg = "Failed to submit weights: Task ID not available"
+                                            self.submit_hcs_message(msg)
+                                        else:
+                                            self.publish_on_chain(
+                                                self.current_task_id,
+                                                akave_hash,
+                                            )
                                     else:
                                         msg = (
                                             f"No weights returned for chunk {chunk_cid}"
@@ -862,6 +880,43 @@ class Node:
         @app.route("/status", methods=["GET"])
         async def status():
             return jsonify({"status": "running"})
+
+        @app.route("/generate-presigned-url", methods=["POST"])
+        async def generate_presigned_url():
+            """Generate a fresh presigned URL for an Akave object hash"""
+            try:
+                data = await request.get_json()
+                weights_hash = data.get("hash")
+
+                if not weights_hash:
+                    return jsonify({"error": "hash parameter required"}), 400
+
+                logger.info(f"Generating presigned URL for hash: {weights_hash}")
+
+                # Import Akave client
+                from akave.mcache import Akave
+                akave_client = Akave()
+
+                # Generate presigned URL (valid for 1 hour)
+                presigned_url = akave_client.get_presigned_url(
+                    key=weights_hash,
+                    expires_in=3600  # 1 hour
+                )
+
+                if presigned_url:
+                    logger.info(f"Presigned URL generated successfully")
+                    return jsonify({
+                        "status": "ok",
+                        "presignedUrl": presigned_url,
+                        "hash": weights_hash
+                    })
+                else:
+                    logger.error("Failed to generate presigned URL")
+                    return jsonify({"error": "Failed to generate presigned URL"}), 500
+
+            except Exception as e:
+                logger.error(f"Error generating presigned URL: {e}")
+                return jsonify({"error": str(e)}), 500
 
         return app
 
