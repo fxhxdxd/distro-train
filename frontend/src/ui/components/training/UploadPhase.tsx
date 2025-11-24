@@ -11,7 +11,7 @@ export const UploadPhase = () => {
   const [projectName, setProjectName] = useState('');
   const [datasetFile, setDatasetFile] = useState<string | File | null>(null);
   const [modelFile, setModelFile] = useState<string | File | null>(null);
-  const contractId = '0.0.6913120';
+  const contractId = import.meta.env.VITE_CONTRACT_ID || '0.0.7307807';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

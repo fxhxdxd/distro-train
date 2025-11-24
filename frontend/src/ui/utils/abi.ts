@@ -31,9 +31,7 @@ export const abi = [
     inputs: [
       { type: 'uint256', name: 'taskId', indexed: true },
       { type: 'address', name: 'trainer', indexed: true },
-      { type: 'string', name: 'weight_hash_1', indexed: false },
-      { type: 'string', name: 'weight_hash_2', indexed: false },
-      { type: 'string', name: 'weight_hash_3', indexed: false },
+      { type: 'string', name: 'weightsHash', indexed: false },
       { type: 'uint256', name: 'rewardAmount', indexed: false },
       { type: 'uint256', name: 'remainingChunks', indexed: false },
     ],

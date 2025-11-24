@@ -178,20 +178,33 @@ class Akave:
         """
         Download a file from a presigned URL or any HTTP URL.
         """
+        import os
         response = requests.get(url, stream=True)
         if response.status_code == 200:
             with open(save_path, "wb") as f:
                 for chunk in response.iter_content(1024):
                     f.write(chunk)
+                # Force write to disk to avoid race conditions
+                f.flush()
+                os.fsync(f.fileno())
 
-            msg = f"File downloaded successfully: {save_path}"
-            logger.info(msg)
-            await send_channel.send(["send-hcs", msg])
+            # Verify file was written
+            if os.path.exists(save_path):
+                file_size = os.path.getsize(save_path)
+                msg = f"File downloaded successfully: {save_path} ({file_size} bytes)"
+                logger.info(msg)
+                await send_channel.send(["send-hcs", msg])
+            else:
+                msg = f"File download completed but file not found: {save_path}"
+                logger.error(msg)
+                await send_channel.send(["send-hcs", msg])
+                raise FileNotFoundError(msg)
 
         else:
             msg = f"Failed to download file. Status code: {response.status_code}"
             logger.error(msg)
             await send_channel.send(["send-hcs", msg])
+            raise Exception(msg)
 
     def download_object(self, object_key: str) -> bool:
         command = [

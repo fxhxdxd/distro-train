@@ -7,8 +7,8 @@ import type { TrainingProject } from '../../pages/TrainingHistory';
 const DetailRow = ({
   label,
   value,
-  copyable = false,
-  downloadable = false,
+  copyable = true,
+  downloadable = true,
 }: {
   label: string;
   value: string | null;
@@ -28,13 +28,24 @@ const DetailRow = ({
       return;
     }
 
-    console.log('Downloading file from URL:', downloadUrl);
+    // If it's already a full URL, use it directly
+    // Otherwise, construct the Akave URL
+    let finalUrl = downloadUrl;
+    if (!downloadUrl.startsWith('http://') && !downloadUrl.startsWith('https://')) {
+      // It's just a hash, construct the full URL
+      finalUrl = `https://o3-rc2.akave.xyz/akave-bucket/${downloadUrl}`;
+      console.log('[handleDownload] Constructed URL from hash:', finalUrl);
+    } else {
+      console.log('[handleDownload] Using full URL directly:', finalUrl);
+    }
+
+    console.log('Downloading file from URL:', finalUrl);
 
     const toastId = toast.loading('Opening save dialog...');
 
     try {
       const downloadResult = await window.electronAPI.downloadFile({
-        url: downloadUrl,
+        url: finalUrl,
         fileName: `${label.replace(/\s/g, '_')}.txt`,
       });
 
@@ -84,6 +95,7 @@ const DetailRow = ({
 };
 
 const WeightsHashRow = ({ weightsHash }: { weightsHash: string | null }) => {
+  console.log('WeightsHashRow : ', weightsHash);
   if (!weightsHash || weightsHash === 'N/A') {
     return (
       <DetailRow
@@ -116,11 +128,22 @@ const WeightsHashRow = ({ weightsHash }: { weightsHash: string | null }) => {
       return;
     }
 
+    // If it's already a full URL, use it directly
+    // Otherwise, construct the Akave URL
+    let finalUrl = downloadUrl;
+    if (!downloadUrl.startsWith('http://') && !downloadUrl.startsWith('https://')) {
+      // It's just a hash, construct the full URL
+      finalUrl = `https://o3-rc2.akave.xyz/akave-bucket/${downloadUrl}`;
+      console.log('[WeightsHashRow handleDownload] Constructed URL from hash:', finalUrl);
+    } else {
+      console.log('[WeightsHashRow handleDownload] Using full URL directly:', finalUrl);
+    }
+
     const toastId = toast.loading('Opening save dialog...');
 
     try {
       const downloadResult = await window.electronAPI.downloadFile({
-        url: downloadUrl,
+        url: finalUrl,
         fileName: `${label.replace(/\s/g, '_')}.txt`,
       });
 

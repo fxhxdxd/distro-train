@@ -113,6 +113,28 @@ async function decryptMessage(base64Ciphertext: any, privateKeyPem: any) {
   return new TextDecoder().decode(decrypted);
 }
 
+async function generatePresignedUrl(hash: string): Promise<string | null> {
+  try {
+    const clientApiUrl = 'http://0.0.0.0:9001'; // Client node API
+    console.log(`Requesting presigned URL for hash: ${hash}`);
+
+    const response = await axios.post(`${clientApiUrl}/generate-presigned-url`, {
+      hash: hash
+    });
+
+    if (response.data.status === 'ok') {
+      console.log(`Presigned URL generated: ${response.data.presignedUrl}`);
+      return response.data.presignedUrl;
+    }
+
+    console.warn('Failed to generate presigned URL:', response.data);
+    return null;
+  } catch (error) {
+    console.error('Failed to generate presigned URL:', error);
+    return null;
+  }
+}
+
 export async function fetchWeightsSubmittedEvent(
   contractId: string,
   taskId: string
@@ -133,24 +155,28 @@ export async function fetchWeightsSubmittedEvent(
         const event = decodeEvent('WeightsSubmitted', log);
 
         if ((event.taskId as string).toString() === taskId) {
-          const str1 = await decryptMessage(
-            event.weight_hash_1 as string,
-            privateKeyPem
-          );
-          const str2 = await decryptMessage(
-            event.weight_hash_2 as string,
-            privateKeyPem
-          );
-          const str3 = await decryptMessage(
-            event.weight_hash_3 as string,
-            privateKeyPem
-          );
-          foundWeights.push(`${str1}${str2}${str3}`);
+          const weightsHash = event.weightsHash as string;
 
           console.log(
             `Found matching 'WeightsSubmitted' event for task ${taskId}:`,
             event
           );
+          console.log(`Weights Hash: ${weightsHash}`);
+
+          // Generate fresh presigned URL from hash
+          const presignedUrl = await generatePresignedUrl(weightsHash);
+
+          if (presignedUrl) {
+            foundWeights.push(presignedUrl);
+            console.log(`Presigned URL: ${presignedUrl}`);
+          } else {
+            console.warn(`Failed to generate presigned URL for hash: ${weightsHash}`);
+            // Fallback to base URL (will likely get 403 but at least shows the hash)
+            const akaveBaseUrl = 'https://o3-rc2.akave.xyz/akave-bucket';
+            const fallbackUrl = `${akaveBaseUrl}/${weightsHash}`;
+            foundWeights.push(fallbackUrl);
+            console.warn(`Using fallback URL (may not work): ${fallbackUrl}`);
+          }
 
           console.log(
             `Trainer: ${AccountId.fromSolidityAddress(
@@ -160,9 +186,7 @@ export async function fetchWeightsSubmittedEvent(
           console.log(`Reward: ${event.rewardAmount}`);
         }
       } catch (err) {
-        console.log('error: ', err);
-        let ciphertext = `t6p8I5y2YzbaM8guYXthYrswKVVyVPq0pFtt6eqn9+Yz5/yaeSuCo2fwABRIxAyESaa/G/QgKTqssB8HDZ2+2za1qd+pvP0FxvLMDvugurTzo7uKe0B182GH7tY4S13UkkEk9A+kdT3BseOyuq6T0C/oOBpFZRzqBUAoYUht8NY5ooa96mCyoptfzQOwku1gCBBhNOdeVPW4Ft1sLnXA90NlPsQp1Rh2IcWR2SxPqGXaDQkLsnDBzSj5VAyLnHEmygjNkXCGNXA8afqVfdv0HnhIQlLTkm0D0v6awBt3gWXdWDLivr8h9qvSwGehL7MxOdL8KZLM2gmPOPlJiUgAlA==`;
-        console.log('dasfea:', await decryptMessage(ciphertext, privateKeyPem));
+        console.log('Error decoding event: ', err);
         // This will catch errors from decodeEvent if the log is for a different event type.
         // We can safely ignore these and continue searching.
       }
