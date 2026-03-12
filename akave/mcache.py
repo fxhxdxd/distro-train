@@ -68,6 +68,9 @@ class Akave:
 
         if process.returncode == 0:
             logger.info("\nAWS profile configured successfully!")
+            # subprocess.run(["aws", "configure", "set", "s3.request_checksum_calculation", "WHEN_REQUIRED", "--profile", profile], check=True)
+            # subprocess.run(["aws", "configure", "set", "s3.response_checksum_validation", "WHEN_REQUIRED", "--profile", profile], check=True)
+            # logger.info("\nAWS profile configured successfully with checksum bypass!")
         else:
             logger.info("\nError configuring AWS CLI:")
             logger.error(stderr)
@@ -227,10 +230,12 @@ class Akave:
         if result.returncode == 0:
             logger.info(f"object '{object_key}' downloaded successfully!")
             logger.info(result.stdout)
+            # return True
         else:
             logger.info("Error downloading object:")
             logger.debug(result.stderr)
             return True
+            # return False
 
     def upload_file(self, file_path: str) -> str:
         self.configure_bucket("create-bucket")
@@ -238,13 +243,16 @@ class Akave:
         self.put_object(file_path)
         return self.cids[-1]
 
-    def upload_string(self, content: str) -> bool:
+    def upload_string(self, content: str) -> tuple:
         """
-        Upload a string as an object to S3 and return the presigned URL.
+        Upload a string as an object to S3 and return (hash, presigned_url).
         The key will be the SHA256 hash of the string content.
+        Returns (hash, url) on success, (None, None) on failure.
         """
-
+        # tmp_file_path = None
         try:
+            # # 0. Ensure bucket exists before any upload
+            # self.configure_bucket("create-bucket")
             # 1. Save string to a temporary file
             with tempfile.NamedTemporaryFile(
                 delete=False, mode="w", encoding="utf-8"
@@ -274,20 +282,22 @@ class Akave:
             result = subprocess.run(command, capture_output=True, text=True)
 
             if result.returncode == 0:
-                logger.debug(f"String uploaded successfully with key '{key}'")
+                logger.info(f"String uploaded successfully with key '{key}'")
             else:
-                logger.info("Error uploading string:")
+                logger.error("Error uploading string:")
                 logger.error(result.stderr)
-                return False
+                return (None, None)
 
             # 4. Generate presigned URL
             url = self.get_presigned_url(key)
             self.cids.append(key)
             self.urls.append(url)
 
-            return True
+            logger.info(f"Generated presigned URL for uploaded string: {url}")
+            return (key, url)
 
         finally:
             # Clean up temporary file
+            # if tmp_file_path and os.path.exists(tmp_file_path):
             if os.path.exists(tmp_file_path):
                 os.remove(tmp_file_path)
