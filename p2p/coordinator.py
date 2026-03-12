@@ -487,6 +487,11 @@ class Node:
                                     )
                                     weights_url_str = str(weights_url)
 
+                                    logger.info(f"=== WEIGHTS UPLOAD DEBUG ===")
+                                    logger.info(f"Chunk CID: {chunk_cid}")
+                                    logger.info(f"Returned weights_url: {weights_url_str}")
+                                    logger.info(f"Weights URL length: {len(weights_url_str)}")
+
                                     if weights_url:
                                         # Extract Akave hash from presigned URL
                                         # Format: https://o3-rc2.akave.xyz/akave-bucket/HASH?X-Amz-...
@@ -495,6 +500,14 @@ class Node:
                                             # Split by '/' and get the last part before '?'
                                             akave_hash = weights_url_str.split('/')[-1].split('?')[0]
                                             logger.info(f"Extracted Akave hash: {akave_hash}")
+                                            logger.info(f"Hash length: {len(akave_hash)}")
+
+                                            # Verify hash looks valid (should be 64 hex chars for SHA256)
+                                            if len(akave_hash) != 64:
+                                                logger.warning(f"Hash length is {len(akave_hash)}, expected 64!")
+                                            if not all(c in '0123456789abcdef' for c in akave_hash):
+                                                logger.warning(f"Hash contains non-hex characters!")
+
                                         except Exception as e:
                                             logger.error(f"Failed to extract Akave hash from URL: {e}")
                                             logger.error(f"URL was: {weights_url_str}")
@@ -506,6 +519,11 @@ class Node:
                                             msg = "Failed to submit weights: Task ID not available"
                                             self.submit_hcs_message(msg)
                                         else:
+                                            logger.info(f"=== SUBMITTING TO BLOCKCHAIN ===")
+                                            logger.info(f"Task ID: {self.current_task_id}")
+                                            logger.info(f"Weights hash being submitted: {akave_hash}")
+                                            logger.info(f"================================")
+
                                             self.publish_on_chain(
                                                 self.current_task_id,
                                                 akave_hash,

@@ -125,9 +125,21 @@ class MLTrainer:
             await send_channel.send(["send-hcs", msg])
 
             weights = local_vars["model_weights"]
+            weights_str = str(weights)
 
-            self.akave_client.upload_string(str(weights))
-            return self.akave_client.urls[-1]
+            logger.info(f"Weights data preview: {weights_str[:200]}...")
+
+            # Upload weights and get hash + URL
+            weights_hash, weights_url = self.akave_client.upload_string(weights_str)
+
+            if not weights_hash or not weights_url:
+                raise Exception("Failed to upload weights to Akave")
+
+            logger.info(f"Weights uploaded successfully!")
+            logger.info(f"Weights hash: {weights_hash}")
+            logger.info(f"Weights URL: {weights_url}")
+
+            return weights_url
 
         except Exception as e:
             msg = f"exception : {e} "

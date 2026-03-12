@@ -272,10 +272,17 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
 
       setCurrentPhase('assembling');
     } catch (error) {
-      console.error(error);
+      console.error('Payment error:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+
+      const errorMessage = (error as any)?.message ||
+                          (error as any)?.reason ||
+                          (error as any)?.error?.message ||
+                          'Unknown error occurred';
+
       toast.error('Transaction Failed', {
         id: toastId,
-        description: (error as Error).message,
+        description: errorMessage,
       });
       setCurrentPhase('payment');
     } finally {

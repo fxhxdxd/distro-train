@@ -7,7 +7,7 @@ trio-util
 pandas
 scikit-learn
 hedera-sdk-py
-protobuf
+protobuf>=5.28.0
 grpcio-tools==1.68.1
 grpcio==1.68.1
 cryptography==44.0.0
@@ -28,4 +28,4 @@ isort
 ruff
 
 [p2p]
-libp2p@ git+https://github.com/lla-dane/py-libp2p.git@fed-learn
+libp2p @ git+https://github.com/lla-dane/py-libp2p.git@fed-learn
