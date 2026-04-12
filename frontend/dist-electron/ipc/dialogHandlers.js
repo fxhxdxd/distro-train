@@ -33,6 +33,16 @@ export function registerDialogHandlers() {
         }
         catch (error) {
             console.error('File download failed:', error);
+            // #region agent log
+            try {
+                const status = error?.response?.status ?? null;
+                const code = error?.code ?? null;
+                fetch('http://127.0.0.1:7710/ingest/7ac52342-3854-424e-853b-78553b66bed5', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'f5fd95' }, body: JSON.stringify({ sessionId: 'f5fd95', runId: 'pre-fix', hypothesisId: 'H403', location: 'frontend/src/electron/ipc/dialogHandlers.ts:41', message: 'download:file failed', data: { url, status, code, errorMessage: error?.message ?? String(error) }, timestamp: Date.now() }) }).catch(() => { });
+            }
+            catch (_) {
+                // ignore
+            }
+            // #endregion agent log
             return { success: false, reason: error.message };
         }
     });

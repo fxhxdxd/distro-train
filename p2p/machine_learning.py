@@ -1,11 +1,12 @@
 import os
 import sys
+import json
 
 import requests
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from akave.mcache import Akave
+from akave.mcache import PinataClient
 from logs import setup_logging
 
 logger = setup_logging("ml")
@@ -13,7 +14,7 @@ logger = setup_logging("ml")
 
 class MLTrainer:
     def __init__(self):
-        self.akave_client = Akave()
+        self.akave_client = PinataClient()
 
     def assign_chunks_to_nodes(self, dataset_url: str, nodes: list) -> dict:
         """
@@ -83,15 +84,15 @@ class MLTrainer:
             # Create symlink for backward compatibility with old model scripts
             # This allows models that hardcode "./dataset.csv" to still work
             legacy_dataset_path = os.path.join(cwd, "dataset.csv")
-            if os.path.exists(legacy_dataset_path):
-                os.remove(legacy_dataset_path)  # Remove existing file/symlink
+            # Use lexists to detect broken symlinks too
+            if os.path.lexists(legacy_dataset_path):
+                os.remove(legacy_dataset_path)
 
             try:
                 os.symlink(dataset_file, legacy_dataset_path)
                 logger.info(f"Created symlink: {legacy_dataset_path} -> {dataset_file}")
             except OSError as e:
                 logger.warning(f"Could not create symlink (may not be supported): {e}")
-                # Fall back to copying if symlinks not supported
                 import shutil
                 shutil.copy2(dataset_file, legacy_dataset_path)
                 logger.info(f"Copied dataset to legacy path: {legacy_dataset_path}")
@@ -100,20 +101,22 @@ class MLTrainer:
             with open(model_file, "r") as f:
                 model_code = f.read()
 
-            # Inject absolute paths into execution context
-            local_vars = {
-                'DATASET_PATH': dataset_file,  # Model can use this instead of hardcoded path
-                'os': os,  # Provide os module to model
+            # Use a single namespace so globals().get('DATASET_PATH') works
+            # inside the model code (ml1_code.py uses globals().get())
+            exec_namespace = {
+                '__builtins__': __builtins__,
+                'DATASET_PATH': dataset_file,
+                'os': os,
             }
 
             msg = "Starting training of model..."
             logger.info(msg)
             await send_channel.send(["send-hcs", msg])
 
-            exec(model_code, {}, local_vars)
+            exec(model_code, exec_namespace)
 
-            # Expect the model to define 'model_weights' variable
-            if "model_weights" not in local_vars:
+            # Expect the model to define 'model_weights' variable in the same namespace
+            if "model_weights" not in exec_namespace:
                 msg = (
                     "Model script must define 'model_weights' variable after execution"
                 )
@@ -124,7 +127,7 @@ class MLTrainer:
             logger.info(msg)
             await send_channel.send(["send-hcs", msg])
 
-            weights = local_vars["model_weights"]
+            weights = exec_namespace["model_weights"]
             weights_str = str(weights)
 
             logger.info(f"Weights data preview: {weights_str[:200]}...")
@@ -145,6 +148,34 @@ class MLTrainer:
             msg = f"exception : {e} "
             logger.error(msg)
             await send_channel.send(["send-hcs", msg])
+
+            # #region agent log
+            try:
+                debug_entry = {
+                    "sessionId": "f5fd95",
+                    "runId": "pre-fix",
+                    "hypothesisId": "H1",
+                    "location": "p2p/machine_learning.py:146",
+                    "message": "train_on_chunk failed before returning weights_url",
+                    "data": {
+                        "exception_type": type(e).__name__,
+                        "exception_message": str(e),
+                        "chunk_url": chunk_url,
+                        "model_url": model_url,
+                    },
+                    "timestamp": __import__("time").time() * 1000,
+                }
+                with open(
+                    "/Users/ayushpetwal/Desktop/BTP/distro-train/.cursor/debug-f5fd95.log",
+                    "a",
+                    encoding="utf-8",
+                ) as f:
+                    f.write(json.dumps(debug_entry) + "\n")
+            except Exception:
+                # Logging must never break training flow
+                pass
+            # #endregion agent log
+
             return None  # Explicitly return None on failure
 
         finally:

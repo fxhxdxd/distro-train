@@ -71,7 +71,7 @@ export const UploadPhase = () => {
           </h3>
           <ul className='text-sm text-text-secondary space-y-1 list-disc list-inside'>
             <li>
-              Files will be uploaded to <strong>Akave network</strong> for
+              Files will be uploaded to <strong>IPFS via Pinata</strong> for
               secure storage.
             </li>
             <li>

@@ -1,6 +1,6 @@
 import type { ISettings } from '../renderer';
 
-const STORAGE_KEY = 'aws_credentials';
+const STORAGE_KEY = 'pinata_credentials';
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI;
 
