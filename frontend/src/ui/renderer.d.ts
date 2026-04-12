@@ -1,6 +1,6 @@
 export interface ISettings {
-  awsAccessKeyId: string;
-  awsSecretAccessKey: string;
+  pinataApiKey: string;
+  pinataSecretKey: string;
 }
 
 export interface IElectronAPI {
@@ -21,17 +21,17 @@ export interface IElectronAPI {
   closeWindow: () => void;
   quitApp: () => void;
   openExternalLink: (url: string) => void;
-  configureAkave: (creds: {
-    awsAccessKeyId: string;
-    awsSecretAccessKey: string;
+  configurePinata: (creds: {
+    pinataApiKey: string;
+    pinataSecretKey: string;
   }) => Promise<boolean>;
-  uploadFileToAkave: (filePath: string) => Promise<string>;
-  uploadDatasetToAkave: (
+  uploadFileToPinata: (filePath: string) => Promise<string>;
+  uploadDatasetToPinata: (
     filePath: string
   ) => Promise<{ datasetHash: string; chunkCount: number }>;
-  listFilesFromAkave: () => Promise<any[]>;
-  fetchFileFromAkave: (objectKey: string) => Promise<string>;
-  onAkaveProgress: (callback: (message: string) => void) => void;
+  listFilesFromPinata: () => Promise<any[]>;
+  fetchFileFromPinata: (cid: string) => Promise<string>;
+  onPinataProgress: (callback: (message: string) => void) => void;
   startLogSubscription: (data: { projectId: string; topicId: string }) => void;
   stopLogSubscription: () => void;
   getLogs: (projectId: string) => Promise<any[]>;

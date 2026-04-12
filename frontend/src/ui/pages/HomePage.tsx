@@ -41,7 +41,7 @@ const Homepage = () => {
       icon: Database,
       title: 'Decentralized Storage',
       description:
-        'Upload your datasets and models to Akave for secure, distributed storage',
+        'Upload your datasets and models to IPFS for secure, distributed storage',
       color: 'text-blue-400',
     },
     {
@@ -167,7 +167,7 @@ const Homepage = () => {
                       Upload Data
                     </h3>
                     <p className='text-text-secondary text-sm'>
-                      Upload your dataset and Python training script to Akave
+                      Upload your dataset and Python training script to IPFS
                       storage
                     </p>
                   </div>

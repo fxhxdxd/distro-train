@@ -11,7 +11,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from prompt_toolkit import PromptSession
 
-from akave.mcache import Akave
+from akave.mcache import PinataClient
 from logs import setup_logging
 
 env_path = Path("..") / ".env"
@@ -45,7 +45,7 @@ def upload_dataset_to_akave(file_path: str) -> str:
     upload each to Akave, then upload a manifest of chunk CIDs.
     Returns the manifest CID.
     """
-    client = Akave()
+    client = PinataClient()
     chunk_urls = []
 
     with open(file_path, "r", encoding="utf-8") as f:
@@ -148,7 +148,7 @@ async def interactive_shell() -> None:
                     if not os.path.isfile(model):
                         logger.error(f"File {model} does not exist.")
                         continue
-                    akave_client = Akave()
+                    akave_client = PinataClient()
                     success = akave_client.upload_file(model)
                     if success:
                         file_url = akave_client.urls[-1]
