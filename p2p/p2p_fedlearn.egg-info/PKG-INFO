@@ -13,7 +13,7 @@ Requires-Dist: trio-util
 Requires-Dist: pandas
 Requires-Dist: scikit-learn
 Requires-Dist: hedera-sdk-py
-Requires-Dist: protobuf
+Requires-Dist: protobuf>=5.28.0
 Requires-Dist: grpcio-tools==1.68.1
 Requires-Dist: grpcio==1.68.1
 Requires-Dist: cryptography==44.0.0
@@ -28,7 +28,7 @@ Requires-Dist: hypercorn[trio]
 Requires-Dist: prompt_toolkit
 Requires-Dist: cryptography
 Provides-Extra: p2p
-Requires-Dist: libp2p@ git+https://github.com/lla-dane/py-libp2p.git@fed-learn ; extra == "p2p"
+Requires-Dist: libp2p @ git+https://github.com/lla-dane/py-libp2p.git@fed-learn ; extra == "p2p"
 Provides-Extra: dev
 Requires-Dist: black; extra == "dev"
 Requires-Dist: isort; extra == "dev"

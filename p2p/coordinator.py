@@ -3,6 +3,7 @@ import base64
 import json
 import os
 import random
+import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -487,18 +488,22 @@ class Node:
                                     )
                                     weights_url_str = str(weights_url)
 
+                                    logger.info(f"=== WEIGHTS UPLOAD DEBUG ===")
+                                    logger.info(f"Chunk CID: {chunk_cid}")
+                                    logger.info(f"Returned weights_url: {weights_url_str}")
+                                    logger.info(f"Weights URL length: {len(weights_url_str)}")
+
                                     if weights_url:
-                                        # Extract Akave hash from presigned URL
-                                        # Format: https://o3-rc2.akave.xyz/akave-bucket/HASH?X-Amz-...
-                                        # Extract: HASH only
+                                        # Extract IPFS CID from gateway URL
+                                        # Format: https://gateway.pinata.cloud/ipfs/CID
                                         try:
-                                            # Split by '/' and get the last part before '?'
-                                            akave_hash = weights_url_str.split('/')[-1].split('?')[0]
-                                            logger.info(f"Extracted Akave hash: {akave_hash}")
+                                            ipfs_cid = weights_url_str.split('/')[-1].split('?')[0]
+                                            logger.info(f"Extracted IPFS CID: {ipfs_cid}")
+
                                         except Exception as e:
-                                            logger.error(f"Failed to extract Akave hash from URL: {e}")
+                                            logger.error(f"Failed to extract CID from URL: {e}")
                                             logger.error(f"URL was: {weights_url_str}")
-                                            akave_hash = weights_url_str  # Fallback to full URL if extraction fails
+                                            ipfs_cid = weights_url_str
 
                                         # Use the stored task ID instead of parsing topic
                                         if self.current_task_id is None:
@@ -506,9 +511,14 @@ class Node:
                                             msg = "Failed to submit weights: Task ID not available"
                                             self.submit_hcs_message(msg)
                                         else:
+                                            logger.info(f"=== SUBMITTING TO BLOCKCHAIN ===")
+                                            logger.info(f"Task ID: {self.current_task_id}")
+                                            logger.info(f"Weights CID being submitted: {ipfs_cid}")
+                                            logger.info(f"================================")
+
                                             self.publish_on_chain(
                                                 self.current_task_id,
-                                                akave_hash,
+                                                ipfs_cid,
                                             )
                                     else:
                                         msg = (
@@ -557,7 +567,9 @@ class Node:
                         await trio.sleep(2)
 
                         # Fetch the bootmesh
-                        peers = self.mesh.get_bootstrap_mesh().get(parts[1], [])
+                        bootmesh = self.mesh.get_bootstrap_mesh()
+                        logger.debug(f"Bootstrap mesh keys: {list(bootmesh.keys())}")
+                        peers = bootmesh.get(parts[1], [])
                         if not peers:
                             msg = f"No peers available in {parts[1]} mesh to connect to"
                             logger.error(msg)
@@ -796,27 +808,34 @@ class Node:
         logger.warning("Periodic mesh update service booting up")
 
         while not self.termination_event.is_set():
-            topic_map = self.pubsub.peer_topics
-            topic_summary = {}
+            try:
+                topic_map = self.pubsub.peer_topics
+                topic_summary = {}
 
-            for topic, peers in topic_map.items():
-                peer_list = []
-                for peer_id in peers:
-                    maddr = self.host.get_peerstore().addrs(peer_id)[0]
-                    peer_id_b58 = base58.b58encode(peer_id.to_bytes()).decode()
-                    peer_list.append(
-                        {
-                            "peer_id": str(peer_id),
-                            "maddr": str(maddr),
-                            "role": self.mesh.role_list.get(peer_id_b58, "UNKNOWN"),
-                            "pub_maddr": self.mesh.public_maddr_list.get(
-                                peer_id_b58, "UNKNOWN"
-                            ),
-                        }
-                    )
-                topic_summary[topic] = peer_list
+                for topic, peers in topic_map.items():
+                    peer_list = []
+                    for peer_id in peers:
+                        addrs = self.host.get_peerstore().addrs(peer_id)
+                        if not addrs:
+                            continue
+                        maddr = addrs[0]
+                        peer_id_b58 = base58.b58encode(peer_id.to_bytes()).decode()
+                        peer_list.append(
+                            {
+                                "peer_id": str(peer_id),
+                                "maddr": str(maddr),
+                                "role": self.mesh.role_list.get(peer_id_b58, "UNKNOWN"),
+                                "pub_maddr": self.mesh.public_maddr_list.get(
+                                    peer_id_b58, "UNKNOWN"
+                                ),
+                            }
+                        )
+                    topic_summary[topic] = peer_list
 
-            self.mesh.local_mesh = topic_summary
+                self.mesh.local_mesh = topic_summary
+            except Exception as e:
+                logger.error(f"Error updating mesh summary: {e}")
+
             await trio.sleep(2)
 
     # TODO: Flood the network periodically with the bootstrap mesh summary
@@ -881,9 +900,111 @@ class Node:
         async def status():
             return jsonify({"status": "running"})
 
+        @app.after_request
+        async def add_cors_headers(response):
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Pinata-Api-Key, X-Pinata-Secret-Key"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+            return response
+
+        @app.route("/upload/file", methods=["POST", "OPTIONS"])
+        async def upload_file():
+            if request.method == "OPTIONS":
+                return "", 204
+            try:
+                files = await request.files
+                uploaded = files.get("file")
+                if not uploaded:
+                    return jsonify({"error": "No file provided"}), 400
+
+                from akave.mcache import PinataClient
+                client = PinataClient()
+
+                with tempfile.NamedTemporaryFile(delete=False, suffix=f"_{uploaded.filename}") as tmp:
+                    uploaded.save(tmp)
+                    tmp_path = tmp.name
+
+                try:
+                    cid = client.upload_file(tmp_path)
+                    gateway_url = client.get_gateway_url(cid)
+                finally:
+                    os.unlink(tmp_path)
+
+                return jsonify({"status": "ok", "hash": cid, "gatewayUrl": gateway_url})
+            except Exception as e:
+                logger.error(f"Error uploading file: {e}")
+                return jsonify({"error": str(e)}), 500
+
+        @app.route("/upload/dataset", methods=["POST", "OPTIONS"])
+        async def upload_dataset():
+            if request.method == "OPTIONS":
+                return "", 204
+            try:
+                files = await request.files
+                uploaded = files.get("file")
+                if not uploaded:
+                    return jsonify({"error": "No file provided"}), 400
+
+                from akave.mcache import PinataClient
+                client = PinataClient()
+
+                with tempfile.NamedTemporaryFile(delete=False, suffix=f"_{uploaded.filename}") as tmp:
+                    uploaded.save(tmp)
+                    tmp_path = tmp.name
+
+                try:
+                    # Read file, chunk it, upload each chunk, create manifest
+                    with open(tmp_path, "r", encoding="utf-8") as f:
+                        content = f.read()
+
+                    lines = content.split("\n")
+                    header = lines[0] + "\n" if lines else ""
+                    data_lines = lines[1:]
+
+                    CHUNK_SIZE = 50 * 1024  # 50KB
+                    chunk_urls = []
+                    current_chunk = []
+                    current_size = 0
+
+                    for line in data_lines:
+                        if not line.strip():
+                            continue
+                        line_with_newline = line + "\n"
+                        line_size = len(line_with_newline.encode("utf-8"))
+
+                        if current_size + line_size > CHUNK_SIZE and current_chunk:
+                            chunk_content = header + "".join(current_chunk)
+                            cid, gateway_url = client.upload_string(chunk_content)
+                            chunk_urls.append(gateway_url)
+                            current_chunk = [line_with_newline]
+                            current_size = line_size
+                        else:
+                            current_chunk.append(line_with_newline)
+                            current_size += line_size
+
+                    if current_chunk:
+                        chunk_content = header + "".join(current_chunk)
+                        cid, gateway_url = client.upload_string(chunk_content)
+                        chunk_urls.append(gateway_url)
+
+                    # Upload manifest
+                    manifest_content = ",".join(chunk_urls)
+                    manifest_cid, manifest_url = client.upload_string(manifest_content)
+                finally:
+                    os.unlink(tmp_path)
+
+                return jsonify({
+                    "status": "ok",
+                    "datasetHash": manifest_url,
+                    "chunkCount": len(chunk_urls),
+                })
+            except Exception as e:
+                logger.error(f"Error uploading dataset: {e}")
+                return jsonify({"error": str(e)}), 500
+
         @app.route("/generate-presigned-url", methods=["POST"])
         async def generate_presigned_url():
-            """Generate a fresh presigned URL for an Akave object hash"""
+            """Generate a download URL for an IPFS CID via Pinata gateway"""
             try:
                 data = await request.get_json()
                 weights_hash = data.get("hash")
@@ -891,31 +1012,21 @@ class Node:
                 if not weights_hash:
                     return jsonify({"error": "hash parameter required"}), 400
 
-                logger.info(f"Generating presigned URL for hash: {weights_hash}")
+                logger.info(f"Generating gateway URL for CID: {weights_hash}")
 
-                # Import Akave client
-                from akave.mcache import Akave
-                akave_client = Akave()
+                from akave.mcache import PinataClient
+                client = PinataClient()
+                gateway_url = client.get_gateway_url(weights_hash)
 
-                # Generate presigned URL (valid for 1 hour)
-                presigned_url = akave_client.get_presigned_url(
-                    key=weights_hash,
-                    expires_in=3600  # 1 hour
-                )
-
-                if presigned_url:
-                    logger.info(f"Presigned URL generated successfully")
-                    return jsonify({
-                        "status": "ok",
-                        "presignedUrl": presigned_url,
-                        "hash": weights_hash
-                    })
-                else:
-                    logger.error("Failed to generate presigned URL")
-                    return jsonify({"error": "Failed to generate presigned URL"}), 500
+                logger.info(f"Gateway URL generated successfully")
+                return jsonify({
+                    "status": "ok",
+                    "presignedUrl": gateway_url,
+                    "hash": weights_hash
+                })
 
             except Exception as e:
-                logger.error(f"Error generating presigned URL: {e}")
+                logger.error(f"Error generating gateway URL: {e}")
                 return jsonify({"error": str(e)}), 500
 
         return app
