@@ -20,14 +20,14 @@ electron_1.contextBridge.exposeInMainWorld('electronAPI', {
     quitApp: () => electron_1.ipcRenderer.send('app:quit'),
     // Open external links
     openExternalLink: (url) => electron_1.ipcRenderer.send('shell:openExternal', url),
-    // Akave related APIs
-    configureAkave: (creds) => electron_1.ipcRenderer.invoke('akave:configure', creds),
-    uploadFileToAkave: (filePath) => electron_1.ipcRenderer.invoke('akave:uploadFile', filePath),
-    uploadDatasetToAkave: (filePath) => electron_1.ipcRenderer.invoke('akave:uploadDataset', filePath),
-    listFilesFromAkave: () => electron_1.ipcRenderer.invoke('akave:listFiles'),
-    fetchFileFromAkave: (objectKey) => electron_1.ipcRenderer.invoke('akave:fetchFile', objectKey),
-    onAkaveProgress: (callback) => {
-        electron_1.ipcRenderer.on('akave:progress', (_event, message) => callback(message));
+    // Pinata (IPFS) related APIs
+    configurePinata: (creds) => electron_1.ipcRenderer.invoke('pinata:configure', creds),
+    uploadFileToPinata: (filePath) => electron_1.ipcRenderer.invoke('pinata:uploadFile', filePath),
+    uploadDatasetToPinata: (filePath) => electron_1.ipcRenderer.invoke('pinata:uploadDataset', filePath),
+    listFilesFromPinata: () => electron_1.ipcRenderer.invoke('pinata:listFiles'),
+    fetchFileFromPinata: (cid) => electron_1.ipcRenderer.invoke('pinata:fetchFile', cid),
+    onPinataProgress: (callback) => {
+        electron_1.ipcRenderer.on('pinata:progress', (_event, message) => callback(message));
     },
     // HCS related APIs
     startLogSubscription: (data) => electron_1.ipcRenderer.send('logs:start', data),

@@ -9,21 +9,21 @@ const SettingsPage = () => {
   const [localSettings, setLocalSettings] = useState(settings);
   const [isLoading, setIsLoading] = useState(false);
   const [showCredentials, setShowCredentials] = useState({
-    awsAccessKeyId: false,
-    awsSecretAccessKey: false,
+    pinataApiKey: false,
+    pinataSecretKey: false,
   });
   const [errors, setErrors] = useState({
-    awsAccessKeyId: '',
-    awsSecretAccessKey: '',
+    pinataApiKey: '',
+    pinataSecretKey: '',
   });
   const navigate = useNavigate();
 
   const validateField = (name: string, value: string) => {
     switch (name) {
-      case 'awsAccessKeyId':
-        return value.trim() === '' ? 'AWS Access Key ID is required' : '';
-      case 'awsSecretAccessKey':
-        return value.trim() === '' ? 'AWS Secret Access Key is required' : '';
+      case 'pinataApiKey':
+        return value.trim() === '' ? 'Pinata API Key is required' : '';
+      case 'pinataSecretKey':
+        return value.trim() === '' ? 'Pinata Secret Key is required' : '';
       default:
         return '';
     }
@@ -44,13 +44,13 @@ const SettingsPage = () => {
 
   const validateForm = () => {
     const newErrors = {
-      awsAccessKeyId: validateField(
-        'awsAccessKeyId',
-        localSettings.awsAccessKeyId
+      pinataApiKey: validateField(
+        'pinataApiKey',
+        localSettings.pinataApiKey
       ),
-      awsSecretAccessKey: validateField(
-        'awsSecretAccessKey',
-        localSettings.awsSecretAccessKey
+      pinataSecretKey: validateField(
+        'pinataSecretKey',
+        localSettings.pinataSecretKey
       ),
     };
 
@@ -100,11 +100,11 @@ const SettingsPage = () => {
         <div className='bg-surface rounded-xl border border-border overflow-hidden'>
           <div className='p-6 border-b border-border'>
             <h2 className='text-lg font-semibold text-text-primary'>
-              AWS Credentials
+              Pinata Credentials
             </h2>
             <p className='text-text-secondary text-sm mt-1'>
-              Configure your AWS credentials to enable file storage and
-              retrieval.
+              Configure your Pinata API credentials to enable IPFS file storage
+              and retrieval.
             </p>
           </div>
 
@@ -113,34 +113,34 @@ const SettingsPage = () => {
               <div>
                 <label className='flex items-center gap-2 text-sm font-medium text-text-primary mb-3'>
                   <Key className='w-4 h-4' />
-                  AWS Access Key ID
+                  Pinata API Key
                 </label>
                 <div className='relative'>
                   <input
-                    type={showCredentials.awsAccessKeyId ? 'text' : 'password'}
-                    name='awsAccessKeyId'
-                    value={localSettings.awsAccessKeyId}
+                    type={showCredentials.pinataApiKey ? 'text' : 'password'}
+                    name='pinataApiKey'
+                    value={localSettings.pinataApiKey}
                     onChange={handleChange}
                     className={`w-full bg-background border ${
-                      errors.awsAccessKeyId ? 'border-red-500' : 'border-border'
+                      errors.pinataApiKey ? 'border-red-500' : 'border-border'
                     } text-text-primary rounded-lg p-3 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors`}
-                    placeholder='Enter your AWS Access Key ID'
+                    placeholder='Enter your Pinata API Key'
                   />
                   <button
                     type='button'
-                    onClick={() => toggleVisibility('awsAccessKeyId')}
+                    onClick={() => toggleVisibility('pinataApiKey')}
                     className='absolute right-3 top-1/2 transform -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors'
                   >
-                    {showCredentials.awsAccessKeyId ? (
+                    {showCredentials.pinataApiKey ? (
                       <EyeOff className='w-4 h-4' />
                     ) : (
                       <Eye className='w-4 h-4' />
                     )}
                   </button>
                 </div>
-                {errors.awsAccessKeyId && (
+                {errors.pinataApiKey && (
                   <p className='text-red-500 text-sm mt-1'>
-                    {errors.awsAccessKeyId}
+                    {errors.pinataApiKey}
                   </p>
                 )}
               </div>
@@ -148,38 +148,38 @@ const SettingsPage = () => {
               <div>
                 <label className='flex items-center gap-2 text-sm font-medium text-text-primary mb-3'>
                   <Lock className='w-4 h-4' />
-                  AWS Secret Access Key
+                  Pinata Secret Key
                 </label>
                 <div className='relative'>
                   <input
                     type={
-                      showCredentials.awsSecretAccessKey ? 'text' : 'password'
+                      showCredentials.pinataSecretKey ? 'text' : 'password'
                     }
-                    name='awsSecretAccessKey'
-                    value={localSettings.awsSecretAccessKey}
+                    name='pinataSecretKey'
+                    value={localSettings.pinataSecretKey}
                     onChange={handleChange}
                     className={`w-full bg-background border ${
-                      errors.awsSecretAccessKey
+                      errors.pinataSecretKey
                         ? 'border-red-500'
                         : 'border-border'
                     } text-text-primary rounded-lg p-3 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors`}
-                    placeholder='Enter your AWS Secret Access Key'
+                    placeholder='Enter your Pinata Secret Key'
                   />
                   <button
                     type='button'
-                    onClick={() => toggleVisibility('awsSecretAccessKey')}
+                    onClick={() => toggleVisibility('pinataSecretKey')}
                     className='absolute right-3 top-1/2 transform -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors'
                   >
-                    {showCredentials.awsSecretAccessKey ? (
+                    {showCredentials.pinataSecretKey ? (
                       <EyeOff className='w-4 h-4' />
                     ) : (
                       <Eye className='w-4 h-4' />
                     )}
                   </button>
                 </div>
-                {errors.awsSecretAccessKey && (
+                {errors.pinataSecretKey && (
                   <p className='text-red-500 text-sm mt-1'>
-                    {errors.awsSecretAccessKey}
+                    {errors.pinataSecretKey}
                   </p>
                 )}
               </div>
@@ -216,16 +216,16 @@ const SettingsPage = () => {
             Need help getting your credentials?
           </h3>
           <p className='text-sm text-text-secondary mb-3'>
-            Visit the IAM section of your AWS account to generate an Access Key
-            ID and Secret Access Key.
+            Sign up at Pinata.cloud and generate your API Key and Secret Key
+            from the API Keys section of your dashboard.
           </p>
           <a
-            href='https://docs.aws.amazon.com/IAM/latest/UserGuide/security-creds.html#access-keys-and-secret-access-keys'
+            href='https://docs.pinata.cloud/account-management/api-keys'
             target='_blank'
             rel='noopener noreferrer'
             className='inline-flex items-center gap-2 text-primary hover:text-primary/80 text-sm font-medium'
           >
-            Go to AWS Documentation
+            Go to Pinata Documentation
             <svg
               className='w-3 h-3'
               fill='none'

@@ -13,11 +13,11 @@ import {
   updateTrainingHistoryItem,
 } from '../utils/historyHelper';
 import {
-  configureAkave,
-  onAkaveProgress,
-  uploadDatasetToAkave,
-  uploadFileToAkave,
-} from '../utils/akaveHelpers';
+  configurePinata,
+  onPinataProgress,
+  uploadDatasetToPinata,
+  uploadFileToPinata,
+} from '../utils/pinataHelpers';
 import {
   fetchNetworkState,
   initializeTrainingRound,
@@ -121,10 +121,10 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (isConfigured && window.electronAPI) {
-      configureAkave(settings);
+      configurePinata(settings);
     }
     if (window.electronAPI) {
-      onAkaveProgress((message) => {
+      onPinataProgress((message) => {
         if (isLoading && activeToastId.current) {
           toast.loading(message, { id: activeToastId.current });
         }
@@ -180,22 +180,22 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
     activeToastId.current = toast.loading('Preparing to upload...');
 
     try {
-      toast.loading('Uploading dataset to Akave...', {
+      toast.loading('Uploading dataset to IPFS...', {
         id: activeToastId.current,
       });
-      const { datasetHash, chunkCount } = await uploadDatasetToAkave(
+      const { datasetHash, chunkCount } = await uploadDatasetToPinata(
         datasetPath
       );
 
       console.log('datasetHash: ', datasetHash);
       console.log('chunkCount: ', chunkCount);
 
-      toast.loading('Uploading model to Akave...', {
+      toast.loading('Uploading model to IPFS...', {
         id: activeToastId.current,
       });
-      const modelHash = await uploadFileToAkave(modelPath);
+      const modelHash = await uploadFileToPinata(modelPath);
       console.log(datasetHash, modelHash);
-      toast.success('Upload to Akave successful!', {
+      toast.success('Upload to IPFS successful!', {
         id: activeToastId.current,
       });
       setResult({ datasetHash, chunkCount, modelHash });
@@ -272,10 +272,17 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
 
       setCurrentPhase('assembling');
     } catch (error) {
-      console.error(error);
+      console.error('Payment error:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+
+      const errorMessage = (error as any)?.message ||
+                          (error as any)?.reason ||
+                          (error as any)?.error?.message ||
+                          'Unknown error occurred';
+
       toast.error('Transaction Failed', {
         id: toastId,
-        description: (error as Error).message,
+        description: errorMessage,
       });
       setCurrentPhase('payment');
     } finally {

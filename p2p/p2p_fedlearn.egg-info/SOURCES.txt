@@ -1,3 +1,4 @@
+README.md
 pyproject.toml
 p2p/examples/ping.py
 p2p/examples/pubsub.py

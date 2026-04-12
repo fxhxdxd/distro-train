@@ -18,8 +18,8 @@ const SettingsContext = createContext<ISettingsContext | undefined>(undefined);
 
 export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [settings, setSettings] = useState<ISettings>({
-    awsAccessKeyId: '',
-    awsSecretAccessKey: '',
+    pinataApiKey: '',
+    pinataSecretKey: '',
   });
 
   useEffect(() => {
@@ -38,7 +38,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const isConfigured = !!(
-    settings.awsAccessKeyId && settings.awsSecretAccessKey
+    settings.pinataApiKey && settings.pinataSecretKey
   );
 
   return (

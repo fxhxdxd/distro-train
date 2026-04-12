@@ -65,7 +65,7 @@ numpy  # Dependency of pandas/scikit-learn
 # ============================================================
 # Storage & IPFS
 # ============================================================
-pinata==0.0.1
+# Pinata IPFS access is via REST API using `requests` (no SDK needed)
 
 # ============================================================
 # Configuration & Environment

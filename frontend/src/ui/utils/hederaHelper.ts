@@ -3,6 +3,7 @@ import {
   Client,
   ContractFunctionParameters,
   AccountId,
+  Hbar,
 } from '@hashgraph/sdk';
 import axios from 'axios';
 import Web3 from 'web3';
@@ -21,6 +22,7 @@ export const getTaskId = async () => {
     new Promise((resolve) => setTimeout(resolve, ms));
   await delay(2000); // Wait for 2 seconds
   const client = Client.forTestnet();
+  client.setDefaultMaxQueryPayment(new Hbar(5));
   const operatorKey = PrivateKey.fromStringECDSA(OPERATOR_KEY);
   client.setOperator(OPERATOR_ID, operatorKey);
 
@@ -37,6 +39,7 @@ export const getTaskId = async () => {
 export const checkTaskStatus = async (taskId: string): Promise<boolean> => {
   try {
     const client = Client.forTestnet();
+    client.setDefaultMaxQueryPayment(new Hbar(5));
     const operatorKey = PrivateKey.fromStringECDSA(OPERATOR_KEY);
     client.setOperator(OPERATOR_ID, operatorKey);
     const query = new ContractCallQuery()
@@ -113,9 +116,9 @@ async function decryptMessage(base64Ciphertext: any, privateKeyPem: any) {
   return new TextDecoder().decode(decrypted);
 }
 
-async function generatePresignedUrl(hash: string): Promise<string | null> {
+export async function generatePresignedUrl(hash: string): Promise<string | null> {
   try {
-    const clientApiUrl = 'http://0.0.0.0:9001'; // Client node API
+    const clientApiUrl = 'http://localhost:9001'; // Client node API
     console.log(`Requesting presigned URL for hash: ${hash}`);
 
     const response = await axios.post(`${clientApiUrl}/generate-presigned-url`, {
@@ -128,9 +131,15 @@ async function generatePresignedUrl(hash: string): Promise<string | null> {
     }
 
     console.warn('Failed to generate presigned URL:', response.data);
+    // #region agent log
+    fetch('http://127.0.0.1:7710/ingest/7ac52342-3854-424e-853b-78553b66bed5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'f5fd95'},body:JSON.stringify({sessionId:'f5fd95',runId:'pre-fix',hypothesisId:'H403',location:'frontend/src/ui/utils/hederaHelper.ts:133',message:'generatePresignedUrl returned non-ok status',data:{hash,status:response.data?.status ?? null},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion agent log
     return null;
   } catch (error) {
     console.error('Failed to generate presigned URL:', error);
+    // #region agent log
+    fetch('http://127.0.0.1:7710/ingest/7ac52342-3854-424e-853b-78553b66bed5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'f5fd95'},body:JSON.stringify({sessionId:'f5fd95',runId:'pre-fix',hypothesisId:'H403',location:'frontend/src/ui/utils/hederaHelper.ts:136',message:'generatePresignedUrl threw',data:{hash,errorName:(error as any)?.name ?? null,errorMessage:(error as any)?.message ?? String(error)},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion agent log
     return null;
   }
 }
@@ -163,19 +172,20 @@ export async function fetchWeightsSubmittedEvent(
           );
           console.log(`Weights Hash: ${weightsHash}`);
 
-          // Generate fresh presigned URL from hash
-          const presignedUrl = await generatePresignedUrl(weightsHash);
+          const hashes = weightsHash.includes(',')
+            ? weightsHash.split(',').map((h) => h.trim()).filter(Boolean)
+            : [weightsHash.trim()];
 
-          if (presignedUrl) {
-            foundWeights.push(presignedUrl);
-            console.log(`Presigned URL: ${presignedUrl}`);
-          } else {
-            console.warn(`Failed to generate presigned URL for hash: ${weightsHash}`);
-            // Fallback to base URL (will likely get 403 but at least shows the hash)
-            const akaveBaseUrl = 'https://o3-rc2.akave.xyz/akave-bucket';
-            const fallbackUrl = `${akaveBaseUrl}/${weightsHash}`;
-            foundWeights.push(fallbackUrl);
-            console.warn(`Using fallback URL (may not work): ${fallbackUrl}`);
+          for (const h of hashes) {
+            const presignedUrl = await generatePresignedUrl(h);
+            if (presignedUrl) {
+              foundWeights.push(presignedUrl);
+              console.log(`Presigned URL: ${presignedUrl}`);
+            } else {
+              // Avoid storing a known-to-403 gateway fallback; keep the raw hash so the UI
+              // can attempt to generate a presigned URL at download time.
+              foundWeights.push(h);
+            }
           }
 
           console.log(

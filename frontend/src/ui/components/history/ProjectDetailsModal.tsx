@@ -3,6 +3,13 @@ import { Dialog, Transition } from '@headlessui/react';
 import { Info, Copy, Trash2, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import type { TrainingProject } from '../../pages/TrainingHistory';
+import { generatePresignedUrl } from '../../utils/hederaHelper';
+
+// #region agent log
+const __agentLog = (location: string, message: string, data: Record<string, unknown>) => {
+  fetch('http://127.0.0.1:7710/ingest/7ac52342-3854-424e-853b-78553b66bed5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'f5fd95'},body:JSON.stringify({sessionId:'f5fd95',runId:'pre-fix',hypothesisId:'H403',location,message,data,timestamp:Date.now()})}).catch(()=>{});
+};
+// #endregion agent log
 
 const DetailRow = ({
   label,
@@ -28,13 +35,33 @@ const DetailRow = ({
       return;
     }
 
-    // If it's already a full URL, use it directly
-    // Otherwise, construct the Akave URL
+    // #region agent log
+    __agentLog('frontend/src/ui/components/history/ProjectDetailsModal.tsx:handleDownload', 'download requested', {
+      label,
+      downloadUrl,
+      isHttp: downloadUrl.startsWith('http://') || downloadUrl.startsWith('https://'),
+    });
+    // #endregion agent log
+
+    // Prefer presigned URLs for private Pinata content.
     let finalUrl = downloadUrl;
-    if (!downloadUrl.startsWith('http://') && !downloadUrl.startsWith('https://')) {
-      // It's just a hash, construct the full URL
-      finalUrl = `https://o3-rc2.akave.xyz/akave-bucket/${downloadUrl}`;
-      console.log('[handleDownload] Constructed URL from hash:', finalUrl);
+    const isHttp = downloadUrl.startsWith('http://') || downloadUrl.startsWith('https://');
+    if (!isHttp) {
+      const presigned = await generatePresignedUrl(downloadUrl);
+      // #region agent log
+      __agentLog('frontend/src/ui/components/history/ProjectDetailsModal.tsx:handleDownload', 'presign attempted', {
+        label,
+        hash: downloadUrl,
+        presignedOk: Boolean(presigned),
+      });
+      // #endregion agent log
+      if (presigned) {
+        finalUrl = presigned;
+        console.log('[handleDownload] Using presigned URL:', finalUrl);
+      } else {
+        finalUrl = `https://gateway.pinata.cloud/ipfs/${downloadUrl}`;
+        console.log('[handleDownload] Constructed fallback gateway URL from hash:', finalUrl);
+      }
     } else {
       console.log('[handleDownload] Using full URL directly:', finalUrl);
     }
@@ -128,13 +155,33 @@ const WeightsHashRow = ({ weightsHash }: { weightsHash: string | null }) => {
       return;
     }
 
-    // If it's already a full URL, use it directly
-    // Otherwise, construct the Akave URL
+    // #region agent log
+    __agentLog('frontend/src/ui/components/history/ProjectDetailsModal.tsx:WeightsHashRow.handleDownload', 'download requested', {
+      label,
+      downloadUrl,
+      isHttp: downloadUrl.startsWith('http://') || downloadUrl.startsWith('https://'),
+    });
+    // #endregion agent log
+
+    // Prefer presigned URLs for private Pinata content.
     let finalUrl = downloadUrl;
-    if (!downloadUrl.startsWith('http://') && !downloadUrl.startsWith('https://')) {
-      // It's just a hash, construct the full URL
-      finalUrl = `https://o3-rc2.akave.xyz/akave-bucket/${downloadUrl}`;
-      console.log('[WeightsHashRow handleDownload] Constructed URL from hash:', finalUrl);
+    const isHttp = downloadUrl.startsWith('http://') || downloadUrl.startsWith('https://');
+    if (!isHttp) {
+      const presigned = await generatePresignedUrl(downloadUrl);
+      // #region agent log
+      __agentLog('frontend/src/ui/components/history/ProjectDetailsModal.tsx:WeightsHashRow.handleDownload', 'presign attempted', {
+        label,
+        hash: downloadUrl,
+        presignedOk: Boolean(presigned),
+      });
+      // #endregion agent log
+      if (presigned) {
+        finalUrl = presigned;
+        console.log('[WeightsHashRow handleDownload] Using presigned URL:', finalUrl);
+      } else {
+        finalUrl = `https://gateway.pinata.cloud/ipfs/${downloadUrl}`;
+        console.log('[WeightsHashRow handleDownload] Constructed fallback gateway URL from hash:', finalUrl);
+      }
     } else {
       console.log('[WeightsHashRow handleDownload] Using full URL directly:', finalUrl);
     }
@@ -280,13 +327,13 @@ export const ProjectDetailsModal = ({
                     <DetailRow label='Job ID' value={project.id} copyable />
                     <DetailRow label='Status' value={project.status} />
                     <DetailRow
-                      label='Dataset Hash (Akave Key)'
+                      label='Dataset Hash (IPFS CID)'
                       value={project.datasetHash}
                       copyable
                       downloadable
                     />
                     <DetailRow
-                      label='Model Hash (Akave Key)'
+                      label='Model Hash (IPFS CID)'
                       value={project.modelHash}
                       copyable
                       downloadable

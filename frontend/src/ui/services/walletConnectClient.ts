@@ -76,28 +76,46 @@ class WalletConnectWallet {
     gasLimit: number,
     payableAmount: Hbar
   ): Promise<string | null> {
-    const signerAccountId = dappConnector.signers[0]?.getAccountId();
-    if (!signerAccountId)
-      throw new Error('Wallet not connected or account not found.');
+    try {
+      const signerAccountId = dappConnector.signers[0]?.getAccountId();
+      if (!signerAccountId)
+        throw new Error('Wallet not connected or account not found.');
 
-    const tx = new ContractExecuteTransaction()
-      .setContractId(contractId)
-      .setGas(gasLimit)
-      .setFunction(functionName, functionParameters.buildHAPIParams())
-      .setPayableAmount(payableAmount)
-      .freezeWithSigner(dappConnector.signers[0]);
+      console.log('Executing contract function:', {
+        contractId: contractId.toString(),
+        functionName,
+        gasLimit,
+        payableAmount: payableAmount.toString()
+      });
 
-    const params: SignAndExecuteTransactionParams = {
-      signerAccountId: signerAccountId.toString(),
-      transactionList: transactionToBase64String(await tx),
-    };
+      const tx = new ContractExecuteTransaction()
+        .setContractId(contractId)
+        .setGas(gasLimit)
+        .setFunction(functionName, functionParameters.buildHAPIParams())
+        .setPayableAmount(payableAmount)
+        .freezeWithSigner(dappConnector.signers[0]);
 
-    const result = await dappConnector.signAndExecuteTransaction(params);
-    console.log(result);
-    const transactionId = (result as any)?.transactionId;
+      const params: SignAndExecuteTransactionParams = {
+        signerAccountId: signerAccountId.toString(),
+        transactionList: transactionToBase64String(await tx),
+      };
 
-    console.log(transactionId);
-    return transactionId || null;
+      const result = await dappConnector.signAndExecuteTransaction(params);
+      console.log('Transaction result:', result);
+
+      const transactionId = (result as any)?.transactionId;
+      console.log('Transaction ID:', transactionId);
+
+      if (!transactionId) {
+        console.error('No transaction ID in result:', result);
+        throw new Error((result as any)?.error?.message || 'Transaction rejected or failed');
+      }
+
+      return transactionId;
+    } catch (error) {
+      console.error('executeContractFunction error:', error);
+      throw error;
+    }
   }
 }
 
