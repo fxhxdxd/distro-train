@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import {
   checkTaskStatus,
   fetchWeightsSubmittedEvent,
+  type WeightEntry,
 } from '../utils/hederaHelper';
 import { LogViewerModal } from '../components/history/LogViewerModal';
 import { CONTRACT_ID } from '../utils/constant';
@@ -23,6 +24,11 @@ export interface TrainingProject {
   status: 'Initialized' | 'Running' | 'Completed' | 'Failed';
   weightsHash: string | null;
   chunkCount?: number;
+  trainerCount?: number;
+  /** Structured weight entries with per-trainer attribution, populated after completion */
+  weightsMetadata?: WeightEntry[];
+  /** Python-repr string of the FedAvg global model, populated after aggregation */
+  globalWeights?: string;
 }
 
 const TrainingHistoryPage = () => {
@@ -63,18 +69,24 @@ const TrainingHistoryPage = () => {
               job.id
             );
             if (weightsArray && weightsArray.length > 0) {
-              const weightsHash = weightsArray.join(', ');
+              const weightsHash = weightsArray.map((w) => w.url).join(', ');
 
               await updateTrainingHistoryItem({
                 projectId: job.id,
                 newStatus: 'Completed',
                 newWeightsHash: weightsHash,
+                weightsMetadata: weightsArray,
               });
 
               setHistory((prev) =>
                 prev.map((p) =>
                   p.id === job.id
-                    ? { ...p, status: 'Completed', weightsHash: weightsHash }
+                    ? {
+                        ...p,
+                        status: 'Completed',
+                        weightsHash,
+                        weightsMetadata: weightsArray,
+                      }
                     : p
                 )
               );

@@ -16,6 +16,15 @@ import {
 } from './constant';
 import { PrivateKey } from '@hashgraph/sdk';
 
+export interface WeightEntry {
+  /** Presigned URL or bare CID — use this for downloads */
+  url: string;
+  /** Bare IPFS CID (canonical, deduplicated) */
+  cid: string;
+  /** Hedera account ID of the trainer node, e.g. "0.0.12345" */
+  trainerAddress: string;
+}
+
 
 export const getTaskId = async () => {
   const delay = (ms: number) =>
@@ -144,14 +153,48 @@ export async function generatePresignedUrl(hash: string): Promise<string | null>
   }
 }
 
+/**
+ * Resolve an EVM address (0x...) to a canonical Hedera account ID (0.0.12345)
+ * by querying the mirror node.  Falls back to the SDK conversion if the lookup
+ * fails or the account field is absent.
+ */
+async function resolveOperatorId(evmAddress: string): Promise<string> {
+  try {
+    const addr = evmAddress.startsWith('0x') ? evmAddress : `0x${evmAddress}`;
+    const res = await axios.get(
+      `https://testnet.mirrornode.hedera.com/api/v1/accounts/${addr}`
+    );
+    if (res.data?.account) return res.data.account as string;
+  } catch {
+    // mirror node unavailable — fall through to SDK
+  }
+  return AccountId.fromSolidityAddress(evmAddress).toString();
+}
+
+/**
+ * Extract a raw IPFS CID from a value that may be a full gateway URL or a bare CID.
+ * e.g. "https://gateway.pinata.cloud/ipfs/QmXYZ" → "QmXYZ"
+ *      "QmXYZ" → "QmXYZ"
+ */
+function extractCid(hashOrUrl: string): string {
+  const trimmed = hashOrUrl.trim();
+  const gatewayMarker = '/ipfs/';
+  const idx = trimmed.lastIndexOf(gatewayMarker);
+  if (idx !== -1) {
+    return trimmed.slice(idx + gatewayMarker.length).split('?')[0];
+  }
+  return trimmed;
+}
+
 export async function fetchWeightsSubmittedEvent(
   contractId: string,
   taskId: string
-): Promise<string[] | null> {
+): Promise<WeightEntry[] | null> {
   await new Promise((res) => setTimeout(res, 5000));
 
   const url = `https://testnet.mirrornode.hedera.com/api/v1/contracts/${contractId.toString()}/results/logs?order=desc&limit=100`;
-  const foundWeights: string[] = [];
+  const foundWeights: WeightEntry[] = [];
+  const seenCids = new Set<string>();
   try {
     const response = await axios.get(url);
     const jsonResponse = response.data;
@@ -165,35 +208,38 @@ export async function fetchWeightsSubmittedEvent(
 
         if ((event.taskId as string).toString() === taskId) {
           const weightsHash = event.weightsHash as string;
+          const trainerAddress = await resolveOperatorId(event.trainer as string);
 
           console.log(
             `Found matching 'WeightsSubmitted' event for task ${taskId}:`,
             event
           );
           console.log(`Weights Hash: ${weightsHash}`);
+          console.log(`Trainer: ${trainerAddress}`);
+          console.log(`Reward: ${event.rewardAmount}`);
 
           const hashes = weightsHash.includes(',')
             ? weightsHash.split(',').map((h) => h.trim()).filter(Boolean)
             : [weightsHash.trim()];
 
           for (const h of hashes) {
-            const presignedUrl = await generatePresignedUrl(h);
-            if (presignedUrl) {
-              foundWeights.push(presignedUrl);
-              console.log(`Presigned URL: ${presignedUrl}`);
-            } else {
-              // Avoid storing a known-to-403 gateway fallback; keep the raw hash so the UI
-              // can attempt to generate a presigned URL at download time.
-              foundWeights.push(h);
+            // Normalize to bare CID to avoid double-prefixing and duplicates
+            const cid = extractCid(h);
+            if (seenCids.has(cid)) {
+              console.log(`Skipping duplicate CID: ${cid}`);
+              continue;
             }
-          }
+            seenCids.add(cid);
 
-          console.log(
-            `Trainer: ${AccountId.fromSolidityAddress(
-              event.trainer as string
-            ).toString()}`
-          );
-          console.log(`Reward: ${event.rewardAmount}`);
+            const presignedUrl = await generatePresignedUrl(cid);
+            const entryUrl = presignedUrl ?? cid;
+
+            if (presignedUrl) {
+              console.log(`Presigned URL: ${presignedUrl}`);
+            }
+
+            foundWeights.push({ url: entryUrl, cid, trainerAddress });
+          }
         }
       } catch (err) {
         console.log('Error decoding event: ', err);

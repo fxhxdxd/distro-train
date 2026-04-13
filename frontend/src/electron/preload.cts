@@ -17,6 +17,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     projectId: string;
     newStatus?: string;
     newWeightsHash?: string;
+    trainerCount?: number;
+    weightsMetadata?: Array<{ url: string; cid: string; trainerAddress: string }>;
+    globalWeights?: string;
   }) => ipcRenderer.invoke('history:update', data),
   deleteHistoryItem: (projectId: string) =>
     ipcRenderer.invoke('history:delete', projectId),
