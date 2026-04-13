@@ -10,7 +10,7 @@ export function registerHistoryHandlers() {
         history.unshift(projectData);
         store.set('trainingHistory', history);
     });
-    ipcMain.handle('history:update', (_event, { projectId, newStatus, newWeightsHash }) => {
+    ipcMain.handle('history:update', (_event, { projectId, newStatus, newWeightsHash, trainerCount, weightsMetadata, globalWeights }) => {
         const history = store.get('trainingHistory', []);
         const projectIndex = history.findIndex((p) => p.id === projectId);
         if (projectIndex !== -1) {
@@ -19,6 +19,15 @@ export function registerHistoryHandlers() {
             }
             if (newWeightsHash) {
                 history[projectIndex].weightsHash = newWeightsHash;
+            }
+            if (trainerCount !== undefined) {
+                history[projectIndex].trainerCount = trainerCount;
+            }
+            if (weightsMetadata !== undefined) {
+                history[projectIndex].weightsMetadata = weightsMetadata;
+            }
+            if (globalWeights !== undefined) {
+                history[projectIndex].globalWeights = globalWeights;
             }
             store.set('trainingHistory', history);
             return true;

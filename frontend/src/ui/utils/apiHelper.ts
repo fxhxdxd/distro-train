@@ -101,3 +101,39 @@ export const startFinalTraining = async (
   const response = await apiClient.post<TrainResponse>('/command', requestBody);
   return response.data && response.data.status === 'ok';
 };
+
+/**
+ * Fetch a dataset manifest from its IPFS gateway URL and return the list of
+ * chunk gateway URLs it contains (comma-separated content).
+ */
+export const fetchManifest = async (manifestUrl: string): Promise<string[]> => {
+  const response = await axios.get<string>(manifestUrl);
+  const raw = typeof response.data === 'string' ? response.data : String(response.data);
+  return raw
+    .split(',')
+    .map((u) => u.trim())
+    .filter(Boolean);
+};
+
+interface VerifyWeightResponse {
+  status: 'ok' | string;
+  weights: string;
+}
+
+/**
+ * Ask the client node to re-run the model on a specific chunk and return the
+ * locally-computed weights string for comparison.
+ */
+export const verifyWeight = async (
+  chunkUrl: string,
+  modelUrl: string
+): Promise<string> => {
+  const response = await apiClient.post<VerifyWeightResponse>('/verify-weight', {
+    chunkUrl,
+    modelUrl,
+  });
+  if (response.data.status !== 'ok') {
+    throw new Error('Verification endpoint returned non-ok status');
+  }
+  return response.data.weights;
+};

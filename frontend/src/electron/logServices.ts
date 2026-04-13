@@ -51,7 +51,7 @@ export class LogService {
       .subscribe(this.client, null, (message) => {
         const newLog: LogEntry = {
           content: Buffer.from(message.contents).toString(),
-          timestamp: message.consensusTimestamp.toString(),
+          timestamp: message.consensusTimestamp.toDate().toISOString(),
         };
 
         console.log('New Log Received:', newLog);

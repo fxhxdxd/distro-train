@@ -1002,6 +1002,45 @@ class Node:
                 logger.error(f"Error uploading dataset: {e}")
                 return jsonify({"error": str(e)}), 500
 
+        @app.route("/verify-weight", methods=["POST", "OPTIONS"])
+        async def verify_weight_route():
+            """
+            Re-run a model on a specific dataset chunk and return the computed
+            weights string so the frontend can compare it against submitted weights.
+
+            Body JSON:
+              { "chunkUrl": "<gateway-url>", "modelUrl": "<gateway-url>" }
+
+            Response JSON:
+              { "status": "ok", "weights": "<python-repr-string>" }
+            """
+            if request.method == "OPTIONS":
+                return "", 204
+            try:
+                data = await request.get_json()
+                chunk_url = data.get("chunkUrl")
+                model_url = data.get("modelUrl")
+
+                if not chunk_url or not model_url:
+                    return jsonify({"error": "chunkUrl and modelUrl are required"}), 400
+
+                logger.info(f"[/verify-weight] chunk_url={chunk_url}")
+                logger.info(f"[/verify-weight] model_url={model_url}")
+
+                weights_str = await self.ml_trainer.verify_chunk(chunk_url, model_url)
+
+                if weights_str is None:
+                    return (
+                        jsonify({"error": "Verification failed — model execution error"}),
+                        500,
+                    )
+
+                return jsonify({"status": "ok", "weights": weights_str})
+
+            except Exception as e:
+                logger.error(f"[/verify-weight] Unexpected error: {e}")
+                return jsonify({"error": str(e)}), 500
+
         @app.route("/generate-presigned-url", methods=["POST"])
         async def generate_presigned_url():
             """Generate a download URL for an IPFS CID via Pinata gateway"""
@@ -1011,6 +1050,11 @@ class Node:
 
                 if not weights_hash:
                     return jsonify({"error": "hash parameter required"}), 400
+
+                # Strip gateway prefix if the hash is already a full URL
+                gateway_marker = "/ipfs/"
+                if gateway_marker in weights_hash:
+                    weights_hash = weights_hash.split(gateway_marker)[-1].split("?")[0]
 
                 logger.info(f"Generating gateway URL for CID: {weights_hash}")
 

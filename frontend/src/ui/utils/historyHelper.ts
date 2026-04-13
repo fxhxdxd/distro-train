@@ -1,3 +1,5 @@
+import type { WeightEntry } from './hederaHelper';
+
 export const getTrainingHistory = async () => {
   return await window.electronAPI.getHistory();
 };
@@ -10,6 +12,9 @@ export const updateTrainingHistoryItem = (data: {
   projectId: string;
   newStatus?: string;
   newWeightsHash?: string;
+  trainerCount?: number;
+  weightsMetadata?: WeightEntry[];
+  globalWeights?: string;
 }) => {
   return window.electronAPI.updateHistoryItem(data);
 };

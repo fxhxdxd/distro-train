@@ -190,3 +190,91 @@ class MLTrainer:
             if os.path.exists(legacy_dataset_path):
                 os.remove(legacy_dataset_path)
                 logger.info(f"Cleaned up legacy dataset path: {legacy_dataset_path}")
+
+    async def verify_chunk(self, chunk_url: str, model_url: str) -> str | None:
+        """
+        Re-run training on a chunk and return the raw weights string.
+
+        Identical to train_on_chunk but skips IPFS upload and HCS logging.
+        Used by the /verify-weight endpoint so the client can deterministically
+        replicate a trainer's result and compare against the submitted weights.
+
+        Returns the weights string on success, None on failure.
+        """
+        cwd = os.getcwd()
+        # Use a 'verify_' prefix to avoid clashing with active trainer temp files
+        dataset_file = os.path.join(cwd, f"verify_dataset_{os.getpid()}.csv")
+        model_file = os.path.join(cwd, f"verify_model_{os.getpid()}.py")
+
+        logger.info(f"[verify_chunk] Chunk URL: {chunk_url}")
+        logger.info(f"[verify_chunk] Model URL: {model_url}")
+
+        for path in [dataset_file, model_file]:
+            if os.path.exists(path):
+                os.remove(path)
+
+        try:
+            # Download chunk CSV
+            logger.info("[verify_chunk] Downloading chunk...")
+            r = requests.get(chunk_url, stream=True, timeout=60)
+            if r.status_code != 200:
+                raise Exception(
+                    f"Failed to download chunk ({r.status_code}): {chunk_url}"
+                )
+            with open(dataset_file, "wb") as f:
+                for chunk in r.iter_content(1024):
+                    f.write(chunk)
+                f.flush()
+                os.fsync(f.fileno())
+
+            # Download model script
+            logger.info("[verify_chunk] Downloading model...")
+            r = requests.get(model_url, stream=True, timeout=60)
+            if r.status_code != 200:
+                raise Exception(
+                    f"Failed to download model ({r.status_code}): {model_url}"
+                )
+            with open(model_file, "wb") as f:
+                for chunk in r.iter_content(1024):
+                    f.write(chunk)
+                f.flush()
+                os.fsync(f.fileno())
+
+            dataset_size = os.path.getsize(dataset_file)
+            model_size = os.path.getsize(model_file)
+            logger.info(f"[verify_chunk] Dataset: {dataset_size} bytes, Model: {model_size} bytes")
+
+            if dataset_size == 0:
+                raise ValueError("Downloaded dataset file is empty")
+            if model_size == 0:
+                raise ValueError("Downloaded model file is empty")
+
+            with open(model_file, "r") as f:
+                model_code = f.read()
+
+            exec_namespace = {
+                "__builtins__": __builtins__,
+                "DATASET_PATH": dataset_file,
+                "os": os,
+            }
+
+            logger.info("[verify_chunk] Running model exec()...")
+            exec(model_code, exec_namespace)
+
+            if "model_weights" not in exec_namespace:
+                raise ValueError("Model script must define 'model_weights' variable")
+
+            weights_str = str(exec_namespace["model_weights"])
+            logger.info(
+                f"[verify_chunk] Weights computed. Preview: {weights_str[:100]}..."
+            )
+            return weights_str
+
+        except Exception as e:
+            logger.error(f"[verify_chunk] Failed: {e}")
+            return None
+
+        finally:
+            for path in [dataset_file, model_file]:
+                if os.path.exists(path):
+                    os.remove(path)
