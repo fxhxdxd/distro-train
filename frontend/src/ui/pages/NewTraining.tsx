@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Brain } from 'lucide-react';
 import { useTraining } from '../contexts/TrainingContext';
 import { TrainingStepper } from '../components/training/TrainingStepper';
@@ -9,7 +9,13 @@ import { TrainingProgressPhase } from '../components/training/TrainingProgressPh
 import { CompletedPhase } from '../components/training/CompletedPhase';
 
 const NewTrainingPage = () => {
-  const { currentPhase } = useTraining();
+  const { currentPhase, resetTraining } = useTraining();
+
+  useEffect(() => {
+    if (currentPhase === 'completed') {
+      resetTraining();
+    }
+  }, []);
 
   const renderCurrentPhase = () => {
     switch (currentPhase) {

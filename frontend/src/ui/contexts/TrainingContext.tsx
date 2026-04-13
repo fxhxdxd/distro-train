@@ -264,6 +264,7 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
         status: 'Initialized',
         weightsHash: null,
         isTrained: false,
+        chunkCount: result.chunkCount ?? 0,
       });
 
       toast.success('Training round initialized successfully!', {
@@ -350,7 +351,7 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Backend did not confirm the training start command.');
       }
 
-      await updateTrainingHistoryItem({ projectId, newStatus: 'Running' });
+      await updateTrainingHistoryItem({ projectId, newStatus: 'Running', trainerCount });
 
       const topicId = TopicId.fromString('0.0.6914391');
       window.electronAPI.startLogSubscription({

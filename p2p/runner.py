@@ -1,3 +1,4 @@
+import argparse
 import os
 import sys
 from pathlib import Path
@@ -31,38 +32,106 @@ env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
 logger = setup_logging("runner")
-OPERATOR_KEY = os.getenv("OPERATOR_KEY")
-OPERATOR_ID = os.getenv("OPERATOR_ID")
-IS_OPERATOR_ID = len(OPERATOR_ID) != 0
-IS_OPERATOR_KEY = len(OPERATOR_KEY) != 0
+
+# ── CLI argument parsing ───────────────────────────────────────────────────────
+# Priority: CLI flag > environment variable (.env already loaded above) > prompt
+#
+# Each trainer node should have its own Hedera account. Use --operator-id and
+# --operator-key to supply per-node credentials without editing .env files.
+#
+# Key format for --operator-key (backend / DER-encoded):
+#   3030020100300706052b8104000a04220420<32-byte-raw-hex>
+# This differs from the frontend VITE_OPERATOR_KEY which is raw hex only.
+# See README.md "Hedera Operator ID & Key Configuration" for details.
+
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Run a distro-train P2P node",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+examples:
+  bootstrap node (uses .env defaults):
+    python runner.py --role bootstrap
+
+  client node:
+    python runner.py --role client
+
+  trainer with a dedicated Hedera account (no .env editing needed):
+    python runner.py --role trainer \\
+        --operator-id 0.0.12345 \\
+        --operator-key 3030020100300706052b8104000a04220420<32-byte-hex>
+        """,
+    )
+    parser.add_argument(
+        "--role",
+        choices=["bootstrap", "client", "trainer"],
+        help="Node role — skips the interactive role prompt",
+    )
+    parser.add_argument(
+        "--operator-id",
+        dest="operator_id",
+        metavar="HEDERA_ACCOUNT",
+        help="Hedera Operator ID, e.g. 0.0.12345 — overrides OPERATOR_ID in .env",
+    )
+    parser.add_argument(
+        "--operator-key",
+        dest="operator_key",
+        metavar="DER_HEX",
+        help="Hedera Operator Key (DER-encoded hex) — overrides OPERATOR_KEY in .env",
+    )
+    return parser.parse_args()
+
+
+_CLI = _parse_args()
+
+# Values loaded from .env (already applied by load_dotenv above)
+_ENV_OPERATOR_KEY = os.getenv("OPERATOR_KEY", "")
+_ENV_OPERATOR_ID = os.getenv("OPERATOR_ID", "")
 
 
 async def interactive_shell() -> None:
 
-    role = await trio.to_thread.run_sync(
-        lambda: input(
-            "Configure the role of the node client/trainer/bootstrap [default: bootstrap]: "
+    # ── Role ──────────────────────────────────────────────────────────────────
+    if _CLI.role:
+        role = _CLI.role
+    else:
+        role = await trio.to_thread.run_sync(
+            lambda: input(
+                "Configure the role of the node client/trainer/bootstrap [default: bootstrap]: "
+            )
         )
-    )
+        role = role.strip() or "bootstrap"
 
-    if IS_OPERATOR_KEY == False:
+    # ── Operator Key: CLI > .env > prompt ─────────────────────────────────────
+    operator_key = _CLI.operator_key or _ENV_OPERATOR_KEY
+    if not operator_key:
         operator_key = await trio.to_thread.run_sync(
-            lambda: input("Enter the operator key [default: operator_key]: ")
+            lambda: input("Enter the operator key (DER-encoded hex): ")
         )
-    else:
-        operator_key = OPERATOR_KEY
+        operator_key = operator_key.strip()
 
-    if IS_OPERATOR_ID == False:
+    # ── Operator ID: CLI > .env > prompt ──────────────────────────────────────
+    operator_id = _CLI.operator_id or _ENV_OPERATOR_ID
+    if not operator_id:
         operator_id = await trio.to_thread.run_sync(
-            lambda: input("Enter the operator id [default: operator_id]: ")
+            lambda: input("Enter the operator id (e.g. 0.0.12345): ")
         )
-    else:
-        operator_id = OPERATOR_ID
+        operator_id = operator_id.strip()
+
+    # ── Warn if trainer is using the shared default account ───────────────────
+    if role == "trainer" and operator_id == _ENV_OPERATOR_ID and not _CLI.operator_id:
+        logger.warning(
+            "Trainer node is using the default .env Operator ID (%s). "
+            "Each trainer should have its own Hedera account for correct "
+            "weight attribution and independent reward payments. "
+            "Re-run with: --operator-id 0.0.XXXX --operator-key 3030...",
+            operator_id,
+        )
 
     node = Node(
-        role=role.strip() or "bootstrap",
-        operator_key=operator_key.strip() or OPERATOR_KEY,
-        operator_id=operator_id.strip() or OPERATOR_ID,
+        role=role,
+        operator_key=operator_key or _ENV_OPERATOR_KEY,
+        operator_id=operator_id or _ENV_OPERATOR_ID,
     )
     node.mesh.fed_mesh_id = FED_LEARNING_MESH
 
