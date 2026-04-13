@@ -8,6 +8,22 @@ interface LogEntry {
   timestamp: string;
 }
 
+/**
+ * Parse a log timestamp that may be in one of two formats:
+ * - ISO string (new):  "2024-04-11T12:34:56.789Z"   → produced by toDate().toISOString()
+ * - Hedera toString (old): "1234567890.000000000"    → seconds.nanoseconds
+ */
+function parseLogTimestamp(ts: string): Date {
+  if (!ts) return new Date(NaN);
+  // ISO format
+  if (ts.includes('T') || ts.includes('-')) return new Date(ts);
+  // Hedera "seconds.nanos" format
+  if (ts.includes('.')) return new Date(parseInt(ts.split('.')[0], 10) * 1000);
+  // Pure numeric ms
+  const ms = Number(ts);
+  return new Date(isNaN(ms) ? NaN : ms);
+}
+
 interface LogViewerModalProps {
   project: TrainingProject | null;
   isOpen: boolean;
@@ -111,7 +127,7 @@ export const LogViewerModal = ({
                     {logs.map((log, index) => (
                       <div key={index} className='flex gap-4'>
                         <span className='flex-shrink-0 text-text-secondary'>
-                          {new Date(log.timestamp).toLocaleTimeString()}
+                          {parseLogTimestamp(log.timestamp).toLocaleTimeString()}
                         </span>
                         <span className='text-text-primary whitespace-pre-wrap'>
                           {log.content}

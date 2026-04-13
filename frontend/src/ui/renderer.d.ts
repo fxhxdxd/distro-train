@@ -14,6 +14,9 @@ export interface IElectronAPI {
     projectId: string;
     newStatus?: string;
     newWeightsHash?: string;
+    trainerCount?: number;
+    weightsMetadata?: Array<{ url: string; cid: string; trainerAddress: string }>;
+    globalWeights?: string;
   }) => Promise<void>;
   deleteHistoryItem: (projectId: string) => Promise<boolean>;
   minimizeWindow: () => void;

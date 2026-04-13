@@ -118,8 +118,7 @@ export const HistoryTable = ({
               <tbody className='divide-y divide-border'>
                 {history.map((training, index) => {
                   const statusInfo = getStatusInfo(training.status);
-                  // Mock trainer nodes data only
-                  const trainerNodes = Math.floor(Math.random() * 8) + 3;
+                  const trainerNodes = training.trainerCount ?? training.chunkCount ?? 0;
 
                   return (
                     <tr
@@ -198,8 +197,7 @@ export const HistoryTable = ({
           <div className='md:hidden divide-y divide-border'>
             {history.map((training, index) => {
               const statusInfo = getStatusInfo(training.status);
-              // Mock trainer nodes data only
-              const trainerNodes = Math.floor(Math.random() * 8) + 3;
+              const trainerNodes = training.trainerCount ?? training.chunkCount ?? 0;
 
               return (
                 <div

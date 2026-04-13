@@ -23,7 +23,7 @@ export class LogService {
             .subscribe(this.client, null, (message) => {
             const newLog = {
                 content: Buffer.from(message.contents).toString(),
-                timestamp: message.consensusTimestamp.toString(),
+                timestamp: message.consensusTimestamp.toDate().toISOString(),
             };
             console.log('New Log Received:', newLog);
             const logKey = `logs-${projectId}`;
