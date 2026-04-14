@@ -2,11 +2,14 @@
 
 ## Overview
 
-Three features that build on each other in sequence:
+Six phases that build on each other in sequence:
 
 1. **Weight-to-Node Attribution** — Show which trainer produced which weight file
 2. **Weight Verification** — Deterministic replication to prove trainers ran the model honestly
 3. **Federated Averaging** — Aggregate verified weights into a single global model
+4. **Operator ID & Key Management** — Per-trainer Hedera credentials and CLI override
+5. **TrustGossip Pipeline** — Byzantine-resilient defense stages (norm clipping, cosine filtering, etc.)
+6. **FedAvg Evaluation & Defense Metrics** — Descriptive analysis of the global model + defense comparison dashboard
 
 ---
 
@@ -719,6 +722,362 @@ Norm clipping and cosine filtering are the highest ROI: ~50 lines of TypeScript 
 
 ---
 
+## Phase 6: FedAvg Evaluation & Defense Metrics Dashboard
+
+### Problem
+
+After running FedAvg the user sees a flat list of global model parameters — coefficients, intercept, scaler values. There is no way to:
+
+1. **Understand** whether the aggregation succeeded (did the trainers converge? which features had the most agreement?).
+2. **Compare** the output of a normal (undefended) FedAvg run against a defense-enabled run (norm clipping, cosine filtering, or both) to quantify the security cost/benefit.
+
+Without these tools, demonstrating FedAvg success and the value of TrustGossip defenses requires manual inspection of raw arrays.
+
+### Part 1 — Global Model Descriptive Analysis
+
+When FedAvg completes, the modal should expand the current results section with a **Model Analysis** panel that answers: *"Was this aggregation a success?"*
+
+#### 1.1 Per-Feature Convergence Report
+
+For each of the 30 features, compute statistics across the N input weight files:
+
+| Metric | Formula | Purpose |
+| --- | --- | --- |
+| **Mean** (= global value) | `(1/N) Σ w_i[j]` | The averaged coefficient — already computed |
+| **Std Dev** | `√( (1/N) Σ (w_i[j] - mean)² )` | Measures trainer agreement. Low σ = strong convergence |
+| **Min / Max** | `min(w_i[j])`, `max(w_i[j])` | Shows spread — a wide range hints at data heterogeneity or a rogue trainer |
+| **Range** | `max - min` | Single number for spread |
+
+Display as a table or heatmap: features with low standard deviation across trainers are well-converged; outlier features with high σ indicate data-dependent divergence or a potential poisoning signal.
+
+```
+┌────────────────────────────────────────────────────────────┐
+│ Feature Convergence                                        │
+│                                                            │
+│ Feature   Global Coeff   Std Dev   Min       Max    Range  │
+│ ─────────────────────────────────────────────────────────── │
+│ f0        0.4357         0.0072    0.4281    0.4432  0.015 │
+│ f1        0.4433         0.0035    0.4396    0.4469  0.007 │  ← tight
+│ f2        0.4198         0.1210    0.2988    0.5408  0.242 │  ← spread
+│ …                                                          │
+│                                                            │
+│ Overall convergence: σ_avg = 0.034 across 30 features      │
+│ Tightest feature: f1 (σ = 0.0035)                          │
+│ Most spread feature: f17 (σ = 0.1543)                      │
+└────────────────────────────────────────────────────────────┘
+```
+
+**Key insight**: For the breast cancer logistic regression model, honest trainers produce low σ (< 0.1) on most features because the sklearn `lbfgs` solver is deterministic — the only source of variance is different data subsets. A feature with σ > 0.5 is a strong signal of either extreme data heterogeneity or a tampered weight file.
+
+#### 1.2 Feature Importance Ranking
+
+Rank features by the absolute value of their global model coefficient. Larger |coefficient| = more influence on the classification decision.
+
+```
+┌────────────────────────────────────────────────┐
+│ Top-5 Influential Features (Global Model)      │
+│                                                │
+│ Rank  Feature    |Coefficient|   Direction     │
+│ ──────────────────────────────────────────────  │
+│  1    f22        1.2381          Malignant (+) │
+│  2    f27        0.9814          Malignant (+) │
+│  3    f7         0.8476          Benign (−)    │
+│  4    f20        0.7333          Malignant (+) │
+│  5    f23        0.6891          Malignant (+) │
+│                                                │
+│ Intercept: -3.0860                             │
+│ (Strong bias toward Benign — model requires    │
+│  positive feature evidence to predict cancer)  │
+└────────────────────────────────────────────────┘
+```
+
+This serves the demo narrative: the global model learned a meaningful decision boundary from distributed data without any single trainer seeing the full dataset.
+
+#### 1.3 Trainer Contribution Heatmap
+
+A visual matrix: rows = trainers (Node #1, #2, …), columns = features, cell colour = that trainer's coefficient value relative to the global average.
+
+- **Green** cells: within 1σ of global mean (aligned)
+- **Yellow** cells: 1–2σ away (data heterogeneity)
+- **Red** cells: > 2σ away (outlier — potential poisoning or very unusual data subset)
+
+For the current 3-trainer × 30-feature scale, render as a simple coloured grid inside the modal. At larger scales (10+ trainers), switch to a canvas/SVG heatmap.
+
+#### 1.4 Intercept & Scaler Analysis
+
+| Parameter | Display |
+| --- | --- |
+| **Intercept** | Global value, per-trainer values, std dev. A negative intercept means the model's prior leans "benign" — it needs positive coefficient evidence to flip the prediction |
+| **Scaler Mean** | Per-feature comparison across trainers. High variance in scaler means proves that chunks contained different data distributions → model was truly trained on non-overlapping subsets |
+| **Scaler Scale** | Same as scaler mean. Validates that data was genuinely partitioned |
+
+The scaler divergence is actually a **positive signal** — it proves data was non-IID across trainers, which is the whole point of federated learning.
+
+### Part 2 — Defense Metrics Comparison
+
+After the user has run FedAvg at least once, the modal should offer a **Compare Runs** view that runs FedAvg twice in a single pass (once without defenses, once with the currently configured defense settings) and displays the difference.
+
+#### 2.1 Dual-Run Pipeline
+
+```
+Input: N weight files (from selected checkboxes)
+    │
+    ├─► Pipeline A (Baseline): federatedAverage(raw weights)
+    │
+    └─► Pipeline B (Defended): clipNorm → filterByCosine → federatedAverage
+    │
+    ▼
+Compare A vs B
+```
+
+Both pipelines read from the same input, so the comparison is fair. The user selects defense settings once; the system produces both outputs automatically.
+
+#### 2.2 Comparison Metrics
+
+| Metric | Formula | What it Shows |
+| --- | --- | --- |
+| **L2 Distance** | `‖global_A − global_B‖₂` over coefficient vector | Total parameter shift introduced by defenses. Higher = defenses had more impact (either caught a real threat or introduced unnecessary distortion) |
+| **Cosine Similarity** | `cos(global_A, global_B)` | Direction alignment. 1.0 = same direction, just scaled. < 0.95 = defenses shifted the decision boundary |
+| **Max Per-Feature Δ** | `max_j |coeff_A[j] − coeff_B[j]|` | Which individual feature changed the most — points to where the defense had the strongest effect |
+| **Feature-wise Δ%** | `|A[j] − B[j]| / max(|A[j]|, ε) × 100` per feature | Percentage change per feature — normalised so small-valued coefficients don't dominate |
+
+#### 2.3 Norm Clipping Report
+
+When norm clipping is enabled, show per-file impact:
+
+```
+┌──────────────────────────────────────────────────────┐
+│ Norm Clipping Report (max norm = 10.0)               │
+│                                                      │
+│ File          Trainer       Original Norm  Clipped?   │
+│ ────────────────────────────────────────────────────── │
+│ Weight #1     0.0.7305847   8.42           No         │
+│ Weight #2     0.0.7305854   9.17           No         │
+│ Weight #3     0.0.7305854   9.31           No         │
+│ Weight #4     0.0.7264750   247.83         YES → 10.0 │
+│                                                      │
+│ Files clipped: 1/4 — poisoned model norm was 24.8×   │
+│ above threshold, reduced to 10.0 before averaging.   │
+└──────────────────────────────────────────────────────┘
+```
+
+The "original norm" column demonstrates why clipping matters: an adversarial weight file with norm 247 would dominate an undefended average. After clipping to 10.0, its influence is bounded to the same scale as honest trainers.
+
+#### 2.4 Cosine Filtering Report
+
+When cosine filtering is enabled, extend the existing similarity scores display with explicit impact analysis:
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ Cosine Filtering Report (threshold = 0.50)               │
+│                                                          │
+│ File          Trainer       Avg Similarity  Status        │
+│ ──────────────────────────────────────────────────────────│
+│ Weight #1     0.0.7305847   0.9827          ✅ Included   │
+│ Weight #2     0.0.7305854   0.9791          ✅ Included   │
+│ Weight #3     0.0.7305854   0.9813          ✅ Included   │
+│ Weight #4     0.0.7264750   0.0342          ❌ Excluded   │
+│                                                          │
+│ Excluded 1 of 4 files.                                   │
+│ Reason: Weight #4 has near-zero similarity to the honest │
+│ majority — it is not a trained model (Python script       │
+│ submitted via C2 vulnerability).                          │
+└──────────────────────────────────────────────────────────┘
+```
+
+#### 2.5 Side-by-Side Global Model Comparison
+
+Display the two global models (baseline vs. defended) with a diff column:
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│ Global Model Comparison                                            │
+│                                                                    │
+│          Baseline (no defense)   Defended (Norm + Cosine)   Δ      │
+│ ──────────────────────────────────────────────────────────────────  │
+│ coeff[0]   0.4198               0.4357                     +0.016  │
+│ coeff[1]   0.4312               0.4433                     +0.012  │
+│ …                                                                  │
+│ intercept  -2.8741              -3.0860                    -0.212  │
+│                                                                    │
+│ L2 Distance:       0.4723                                          │
+│ Cosine Similarity: 0.9981                                          │
+│ Max Feature Δ:     0.1892 (feature f22)                            │
+│                                                                    │
+│ Interpretation: Defenses shifted the model slightly toward the     │
+│ honest-trainer consensus. Cosine similarity > 0.99 means the       │
+│ decision boundary direction is essentially preserved, but the      │
+│ poisoned file's influence on magnitude was removed.                 │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+#### 2.6 Defense Impact Summary
+
+A single prose block auto-generated from the metrics:
+
+> **Normal FedAvg**: Averaged 4 weight files. Global model includes contributions from all trainers, including unverified Weight #4 (submitted by 0.0.7264750 via the C2 vulnerability — not a trained model).
+>
+> **Defended FedAvg**: Norm clipping reduced Weight #4's coefficient norm from 247.83 to 10.0 (96% reduction). Cosine filtering then excluded it entirely (similarity 0.034 < threshold 0.50). Final average computed from 3 honest weight files.
+>
+> **Net effect**: L2 distance 0.47 between the two global models. The defended model's coefficients are closer to the honest-trainer mean, with the intercept shifting by 0.21 toward the expected value. The defense pipeline successfully identified and neutralised the adversarial submission.
+
+### Implementation
+
+#### Step 1: Analysis utility functions
+
+**File**: `frontend/src/ui/utils/fedAvgAnalysis.ts` (new)
+
+```ts
+export interface FeatureStats {
+  featureIndex: number;
+  globalValue: number;       // averaged coefficient
+  stdDev: number;            // σ across trainers
+  min: number;
+  max: number;
+  range: number;
+  perTrainer: number[];      // each trainer's value for this feature
+}
+
+export interface ConvergenceReport {
+  features: FeatureStats[];
+  avgStdDev: number;         // mean σ across all features
+  tightestFeature: number;   // index with lowest σ
+  mostSpreadFeature: number; // index with highest σ
+}
+
+export interface ComparisonMetrics {
+  l2Distance: number;
+  cosineSimilarity: number;
+  maxFeatureDelta: number;
+  maxDeltaFeatureIndex: number;
+  perFeatureDeltaPercent: number[];
+}
+
+/** Compute per-feature convergence statistics across trainer weight files. */
+export function computeConvergence(
+  trainerWeights: ModelWeights[],
+  globalModel: ModelWeights
+): ConvergenceReport { ... }
+
+/** Rank features by absolute global coefficient value (descending). */
+export function rankFeatureImportance(
+  globalModel: ModelWeights
+): { featureIndex: number; absCoeff: number; direction: 'positive' | 'negative' }[] { ... }
+
+/** Compute comparison metrics between two global models. */
+export function compareGlobalModels(
+  baseline: ModelWeights,
+  defended: ModelWeights
+): ComparisonMetrics { ... }
+
+/** Compute L2 norm of a coefficient vector (for the clipping report). */
+export function coefficientNorm(weights: ModelWeights): number { ... }
+```
+
+Each function is pure arithmetic — no async, no side effects, no backend calls.
+
+#### Step 2: Norm clipping report data
+
+Before clipping, record the original norms. Modify the aggregation flow in `AggregationModal.tsx`:
+
+```ts
+interface ClipReport {
+  fileIndex: number;
+  trainerAddress: string;
+  originalNorm: number;
+  clipped: boolean;
+  clippedNorm: number; // equals originalNorm if not clipped
+}
+
+// Before clipNorm loop:
+const clipReports: ClipReport[] = parsedWeights.map((w, i) => ({
+  fileIndex: i,
+  trainerAddress: entries[i].trainerAddress,
+  originalNorm: coefficientNorm(w),
+  clipped: false,
+  clippedNorm: coefficientNorm(w),
+}));
+
+// After clipNorm:
+if (defense.normClipping) {
+  parsedWeights = parsedWeights.map((w, i) => {
+    const clipped = clipNorm(w, defense.maxNorm);
+    const newNorm = coefficientNorm(clipped);
+    clipReports[i].clipped = newNorm < clipReports[i].originalNorm;
+    clipReports[i].clippedNorm = newNorm;
+    return clipped;
+  });
+}
+```
+
+Store `clipReports` in component state for the report display.
+
+#### Step 3: Dual-run comparison in the AggregationModal
+
+Add a "Compare with Baseline" toggle/button:
+
+```ts
+const [comparisonMode, setComparisonMode] = useState(false);
+const [baselineModel, setBaselineModel] = useState<ModelWeights | null>(null);
+const [comparisonMetrics, setComparisonMetrics] = useState<ComparisonMetrics | null>(null);
+```
+
+When `comparisonMode` is on, `runAggregation` executes both pipelines:
+
+```ts
+// Pipeline A — baseline (no defenses)
+const baselineResult = federatedAverage(rawWeights);
+
+// Pipeline B — defended (current settings)
+let defendedWeights = [...rawWeights];
+if (defense.normClipping) defendedWeights = defendedWeights.map(w => clipNorm(w, defense.maxNorm));
+if (defense.cosineFilter) defendedWeights = filterByCosine(defendedWeights, defense.cosineThreshold).kept;
+const defendedResult = federatedAverage(defendedWeights);
+
+// Compare
+const metrics = compareGlobalModels(baselineResult, defendedResult);
+setBaselineModel(baselineResult);
+setComparisonMetrics(metrics);
+```
+
+#### Step 4: UI panels in AggregationModal
+
+Add three new collapsible sections below the existing Global Model display:
+
+1. **Model Analysis** (always shown after FedAvg)
+   - Convergence table with per-feature σ
+   - Top-5 feature importance ranking
+   - Trainer contribution heatmap (colour-coded grid)
+
+2. **Defense Report** (shown when any defense was active)
+   - Norm clipping report (table with per-file norms)
+   - Cosine filtering report (extends current similarity scores)
+
+3. **Baseline Comparison** (shown when comparison mode is on)
+   - Side-by-side parameter diff
+   - L2 distance, cosine similarity, max Δ
+   - Auto-generated impact summary
+
+### Files Modified/Created
+
+| File | Change |
+| --- | --- |
+| `frontend/src/ui/utils/fedAvgAnalysis.ts` | **NEW** — convergence, feature importance, comparison metrics |
+| `frontend/src/ui/components/history/AggregationModal.tsx` | Dual-run pipeline, clip reports, analysis panels, comparison UI |
+| `frontend/src/ui/utils/fedAvg.ts` | Export `coefficientNorm` (rename internal `_l2` or add wrapper) |
+
+### Demo Narrative
+
+Phase 6 ties together the C2 vulnerability demo and the TrustGossip defense demo in a single visual flow:
+
+1. **Show the problem**: Run normal FedAvg with all 4 weight files (including the adversarial Weight #4). The convergence report shows feature σ spiking because one "trainer" submitted a Python script, not weights. The feature importance ranking is distorted.
+
+2. **Show the fix**: Enable Norm Clipping + Cosine Filtering. Re-run. The defense report shows Weight #4 was clipped from norm 247 → 10 and then excluded entirely (cosine similarity 0.034). The convergence report now shows tight σ across all features.
+
+3. **Quantify the impact**: The baseline comparison shows L2 distance between the poisoned global model and the clean global model, proving the defense recovered the honest consensus.
+
+---
+
 ## Implementation Order
 
 ```
@@ -755,9 +1114,17 @@ Phase 5: TrustGossip Pipeline (incremental)
 ├── 5.3  Stake-based Sybil gating in smart contract
 ├── 5.4  Trust score storage + weighted FedAvg (requires multi-round)
 └── 5.5  Bucketing aggregation (deferred until 10+ trainers)
+
+Phase 6: FedAvg Evaluation & Defense Metrics
+├── 6.1  Create fedAvgAnalysis.ts (convergence, importance, comparison utils)
+├── 6.2  Add norm clipping report (per-file original norm, clipped flag)
+├── 6.3  Add convergence report UI (per-feature σ table, heatmap)
+├── 6.4  Add feature importance ranking display
+├── 6.5  Add dual-run comparison pipeline (baseline vs defended)
+└── 6.6  Add side-by-side diff + impact summary panel
 ```
 
-**Dependencies**: Phase 2 depends on Phase 1 (needs `WeightEntry` with trainer address). Phase 3 shares the weight parser with Phase 2 but is otherwise independent — can be built in parallel after the parser is done. Phase 4 is independent of Phases 1-3. Phase 5 stages 1-2 depend on Phase 3 (FedAvg pipeline); stage 3 requires smart contract changes; stages 4-5 require multi-round training.
+**Dependencies**: Phase 2 depends on Phase 1 (needs `WeightEntry` with trainer address). Phase 3 shares the weight parser with Phase 2 but is otherwise independent — can be built in parallel after the parser is done. Phase 4 is independent of Phases 1-3. Phase 5 stages 1-2 depend on Phase 3 (FedAvg pipeline); stage 3 requires smart contract changes; stages 4-5 require multi-round training. Phase 6 depends on Phase 3 (FedAvg) and Phase 5.1-5.2 (defense functions) — both are already implemented.
 
 ### Estimated Scope
 
@@ -771,6 +1138,7 @@ Phase 5: TrustGossip Pipeline (incremental)
 | 5.1-2 | 0         | 1              | Low — ~50 lines in fedAvg.ts                             |
 | 5.3   | 0         | 1              | Medium — smart contract modification                     |
 | 5.4-5 | 1         | 3              | High — multi-round infrastructure + trust store          |
+| 6     | 1         | 2              | Medium — analysis utils + dual-run UI + comparison panels |
 
 
 ---
