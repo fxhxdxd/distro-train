@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   deleteHistoryItem,
   getTrainingHistory,
@@ -33,10 +33,19 @@ export interface TrainingProject {
 
 const TrainingHistoryPage = () => {
   const [history, setHistory] = useState<TrainingProject[]>([]);
-  const [selectedProject, setSelectedProject] =
-    useState<TrainingProject | null>(null);
-  const [logViewProject, setLogViewProject] = useState<TrainingProject | null>(
-    null
+
+  // Store only the ID so the modal always reflects the latest history entry,
+  // even when polling updates weightsMetadata after the modal is already open.
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const selectedProject = useMemo(
+    () => history.find((p) => p.id === selectedProjectId) ?? null,
+    [history, selectedProjectId]
+  );
+
+  const [logViewProjectId, setLogViewProjectId] = useState<string | null>(null);
+  const logViewProject = useMemo(
+    () => history.find((p) => p.id === logViewProjectId) ?? null,
+    [history, logViewProjectId]
   );
 
   useEffect(() => {
@@ -116,8 +125,8 @@ const TrainingHistoryPage = () => {
         );
         toast.success('Project history deleted.');
 
-        if (selectedProject?.id === projectId) {
-          setSelectedProject(null);
+        if (selectedProjectId === projectId) {
+          setSelectedProjectId(null);
         }
       } else {
         toast.error('Failed to delete project history.');
@@ -136,22 +145,22 @@ const TrainingHistoryPage = () => {
 
       <HistoryTable
         history={history}
-        onViewDetails={(project) => setSelectedProject(project)}
+        onViewDetails={(project) => setSelectedProjectId(project.id)}
         onDelete={handleDeleteProject}
-        onViewLogs={(project) => setLogViewProject(project)}
+        onViewLogs={(project) => setLogViewProjectId(project.id)}
       />
 
       <ProjectDetailsModal
-        isOpen={!!selectedProject}
+        isOpen={!!selectedProjectId}
         project={selectedProject}
-        onClose={() => setSelectedProject(null)}
+        onClose={() => setSelectedProjectId(null)}
         onDelete={handleDeleteProject}
       />
 
       <LogViewerModal
-        isOpen={!!logViewProject}
+        isOpen={!!logViewProjectId}
         project={logViewProject}
-        onClose={() => setLogViewProject(null)}
+        onClose={() => setLogViewProjectId(null)}
       />
     </div>
   );
