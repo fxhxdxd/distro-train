@@ -2,11 +2,11 @@
 
 A peer-to-peer marketplace connecting ML users (data + models, no compute) with trainers (idle GPUs/CPUs). Built on **py-libp2p**, **Pinata (IPFS)**, and **Hedera blockchain** for trustless, transparent, and cost-efficient distributed model training.
 
-> Reference: [github.com/lla-dane/P2P-Federated-Learning](https://github.com/lla-dane/P2P-Federated-Learning)
+> Reference papers : TODO
 
 ## Demo
 
-[Loom Video](https://www.loom.com/share/49afb7fc3a29451482d053b8bf19aa62)
+TODO: 
 
 ---
 
