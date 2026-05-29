@@ -14,6 +14,7 @@ import {
 } from '../utils/hederaHelper';
 import { LogViewerModal } from '../components/history/LogViewerModal';
 import { CONTRACT_ID } from '../utils/constant';
+import { History } from 'lucide-react';
 
 export interface TrainingProject {
   id: string;
@@ -136,12 +137,21 @@ const TrainingHistoryPage = () => {
 
   return (
     <div>
-      <h1 className='text-3xl font-bold text-text-primary mb-2'>
-        Training History
-      </h1>
-      <p className='text-text-secondary mb-8'>
-        Overview of all your past and current training jobs.
-      </p>
+      <div className='pb-6 mb-6 border-b border-border'>
+        <div className='flex items-center gap-3'>
+          <div className='w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center border border-primary/20'>
+            <History className='w-5 h-5 text-primary' />
+          </div>
+          <div>
+            <h1 className='text-2xl font-bold text-text-primary'>
+              Training History
+            </h1>
+            <p className='text-sm text-text-secondary mt-0.5'>
+              Overview of all your past and current training jobs.
+            </p>
+          </div>
+        </div>
+      </div>
 
       <HistoryTable
         history={history}

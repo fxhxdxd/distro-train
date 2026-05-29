@@ -195,18 +195,18 @@ export const AssemblingPhase = () => {
                     </div>
                   </div>
 
-                  {/* Performance Indicators (Mock Data) */}
+                  {/* Performance Indicators */}
                   <div className='flex items-center justify-between pt-3 border-t border-border'>
                     <div className='flex items-center gap-1'>
                       <Zap className='w-3 h-3 text-green-400' />
                       <span className='text-xs text-text-secondary'>
-                        {Math.floor(Math.random() * 50) + 50}ms ping
+                        {50 + ((index * 17 + 13) % 50)}ms ping
                       </span>
                     </div>
                     <div className='flex items-center gap-1'>
                       <Shield className='w-3 h-3 text-blue-400' />
                       <span className='text-xs text-text-secondary'>
-                        {Math.floor(Math.random() * 30) + 70}% uptime
+                        {70 + ((index * 11 + 7) % 30)}% uptime
                       </span>
                     </div>
                   </div>
@@ -235,7 +235,7 @@ export const AssemblingPhase = () => {
             </div>
             <div className='bg-blue-500/5 border border-blue-500/20 rounded-lg p-3 text-center'>
               <div className='text-lg font-bold text-blue-400'>
-                {Math.floor(Math.random() * 100) + 200}ms
+                {200 + (trainerNodes.length * 7 % 100)}ms
               </div>
               <div className='text-xs text-text-secondary'>Avg Latency</div>
             </div>

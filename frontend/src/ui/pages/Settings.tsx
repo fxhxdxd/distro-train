@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Save, Shield, Key, Lock } from 'lucide-react';
+import { Eye, EyeOff, Save, Shield, Key, Lock, Settings } from 'lucide-react';
 
 const SettingsPage = () => {
   const { settings, saveSettings } = useSettings();
@@ -80,16 +80,30 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className='min-h-screen bg-background'>
-      <div className='max-w-2xl mx-auto px-6 py-8'>
-        <div className='bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6'>
+    <div className='min-h-full'>
+      <div className='pb-6 mb-6 border-b border-border'>
+        <div className='flex items-center gap-3'>
+          <div className='w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center border border-primary/20'>
+            <Settings className='w-5 h-5 text-primary' />
+          </div>
+          <div>
+            <h1 className='text-2xl font-bold text-text-primary'>Settings</h1>
+            <p className='text-sm text-text-secondary mt-0.5'>
+              Manage your API credentials and preferences.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className='max-w-2xl'>
+        <div className='bg-primary/5 border border-primary/20 rounded-lg p-4 mb-6'>
           <div className='flex items-start gap-3'>
-            <Shield className='w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5' />
+            <Shield className='w-5 h-5 text-primary mt-0.5' />
             <div>
-              <h3 className='font-medium text-blue-900 dark:text-blue-100'>
+              <h3 className='font-medium text-text-primary'>
                 Secure Credentials Storage
               </h3>
-              <p className='text-sm text-blue-700 dark:text-blue-300 mt-1'>
+              <p className='text-sm text-text-secondary mt-1'>
                 Your API credentials are stored locally and never sent to
                 external servers.
               </p>
@@ -191,13 +205,13 @@ const SettingsPage = () => {
                 disabled={isLoading}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all ${
                   isLoading
-                    ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                    : 'bg-primary text-white hover:bg-primary/90 active:scale-[0.98]'
+                    ? 'bg-primary/20 text-text-secondary cursor-not-allowed'
+                    : 'bg-primary text-background hover:bg-primary/90 active:scale-[0.98]'
                 }`}
               >
                 {isLoading ? (
                   <>
-                    <div className='w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin' />
+                    <div className='w-4 h-4 border-2 border-text-secondary/30 border-t-text-secondary rounded-full animate-spin' />
                     Saving...
                   </>
                 ) : (

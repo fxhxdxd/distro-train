@@ -36,25 +36,26 @@ const NewTrainingPage = () => {
 
   return (
     <div className='min-h-full'>
-      <div className='mb-8'>
-        <div className='flex items-center gap-4 mb-4'>
-          <div className='w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center border border-primary/30'>
-            <Brain className='w-6 h-6 text-primary' />
+      <div className='pb-6 mb-6 border-b border-border'>
+        <div className='flex items-center gap-3'>
+          <div className='w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center border border-primary/20'>
+            <Brain className='w-5 h-5 text-primary' />
           </div>
           <div>
-            <h1 className='text-3xl font-bold text-text-primary'>
-              Decentralized AI Training
+            <h1 className='text-2xl font-bold text-text-primary'>
+              New Training Job
             </h1>
-            <p className='text-text-secondary'>
-              Upload → Assemble → Pay → Train → Get Results
+            <p className='text-sm text-text-secondary mt-0.5'>
+              Decentralized federated training across the P2P network.
             </p>
           </div>
         </div>
       </div>
 
-      <TrainingStepper />
-
-      <div className='max-w-4xl mx-auto space-y-6'>{renderCurrentPhase()}</div>
+      <div className='max-w-4xl mx-auto'>
+        <TrainingStepper />
+        <div className='space-y-6'>{renderCurrentPhase()}</div>
+      </div>
     </div>
   );
 };

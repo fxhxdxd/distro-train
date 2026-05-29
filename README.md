@@ -246,8 +246,8 @@ When the user clicks **Start Final Training**, the following sequence executes:
 ### Installation
 
 ```bash
-git clone https://github.com/lla-dane/P2P-Federated-Learning.git
-cd P2P-Federated-Learning
+git clone https://github.com/1Ayush-Petwal/Distro_Train_M
+cd Distro_Train_M
 ```
 
 **Frontend:**
@@ -260,7 +260,7 @@ yarn install
 **Backend:**
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 uv sync --all-extras
 pip install -r extra_requirements.txt
 ```
@@ -347,6 +347,9 @@ cd frontend && yarn dev
 # Terminal 2: Bootstrap node
 .venv/bin/python p2p/runner.py --role bootstrap
 
+#Put the bootstrap address that is obtained in 
+#.env -> BOOTSTRAP_ADDR=... 
+
 # Terminal 3: Client node
 .venv/bin/python p2p/runner.py --role client
 
@@ -383,7 +386,6 @@ curl http://localhost:9000/status
 **ML Users** — Have data and models but lack compute. Upload via frontend, pay with HBAR, receive trained weights.
 
 **Trainers** — Have idle GPUs/CPUs. Earn HBAR by training assigned chunks. Fair pricing through market competition.
-
 
 ## Competition & Current tech in the Distributed Training of ML models:
 
