@@ -292,7 +292,17 @@ export async function fetchWeightsSubmittedEvent(
               seenCids.add(cid);
 
               const presignedUrl = await generatePresignedUrl(cid);
-              foundWeights.push({ url: presignedUrl ?? cid, cid, trainerAddress });
+              // Never fall back to a bare CID for `url`: fetching "<cid>"
+              // resolves relative to the renderer origin (e.g.
+              // http://localhost:5173/<cid>), so the dev server returns
+              // index.html and weight parsing fails with "Unexpected token '<'".
+              // Use a full public gateway URL as the fallback instead.
+              const gatewayUrl = `https://gateway.pinata.cloud/ipfs/${cid}`;
+              foundWeights.push({
+                url: presignedUrl ?? gatewayUrl,
+                cid,
+                trainerAddress,
+              });
             }
           }
         } catch {

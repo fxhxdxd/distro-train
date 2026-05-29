@@ -73,7 +73,7 @@ const TrainingHistoryPage = () => {
           // const isComplete = true;
 
           if (!isComplete) {
-            window.electronAPI.stopLogSubscription();
+            window.electronAPI?.stopLogSubscription();
             const weightsArray = await fetchWeightsSubmittedEvent(
               CONTRACT_ID,
               job.id

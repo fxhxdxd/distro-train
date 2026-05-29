@@ -44,6 +44,13 @@ export const LogViewerModal = ({
       setIsLoading(true);
       setLogs([]);
 
+      // Logs are streamed from the Electron main process over IPC. In the
+      // browser there is no log stream, so just stop the spinner (no-op).
+      if (!window.electronAPI) {
+        setIsLoading(false);
+        return;
+      }
+
       window.electronAPI.getLogs(project.id).then((initialLogs) => {
         console.log('initialLogs', initialLogs);
         setLogs(initialLogs);
