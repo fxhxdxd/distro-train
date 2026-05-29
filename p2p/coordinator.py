@@ -456,7 +456,13 @@ class Node:
                         logger.debug("Client public key restored and added")
                         model_hash = parts[1]
                         assignments: dict = ast.literal_eval(parts[3])
-                        node_id: str = self.host.get_id()
+                        # host.get_id() returns a libp2p ID object, NOT a str.
+                        # Assignment keys arrive as base58 strings (built from
+                        # get_channel_nodes -> peer["peer_id"], round-tripped via
+                        # ast.literal_eval). Comparing an ID to a str silently
+                        # never matches, so a trainer would skip its assigned
+                        # chunks. Normalise this node's id to str for matching.
+                        node_id: str = str(self.host.get_id())
 
                         # Store task ID from the current training topic
                         try:
@@ -475,8 +481,14 @@ class Node:
                                 logger.error(f"Could not extract numeric task ID from topic: {topic}")
                                 continue
 
+                        logger.info(
+                            f"[assign] this node id={node_id}; assignment "
+                            f"keys={list(assignments.keys())}"
+                        )
+                        matched_any = False
                         for k, v in assignments.items():
-                            if k == node_id:
+                            if str(k) == node_id:
+                                matched_any = True
                                 for chunk_cid in v:
 
                                     msg = f"Training of chunk {chunk_cid} started...."
@@ -536,6 +548,15 @@ class Node:
                                 )
                                 await self.pubsub.unsubscribe(self.training_topic)
 
+                        if not matched_any:
+                            msg = (
+                                f"[assign] no chunks matched this node "
+                                f"(id={node_id}). Nothing trained this round — "
+                                f"check that get_channel_nodes ids equal host id."
+                            )
+                            logger.warning(msg)
+                            self.submit_hcs_message(msg)
+
                     if cmd == "join" and len(parts) > 1:
                         if self.role != "trainer":
                             msg = "Only TRAINER nodes can participate in the training sequence"
@@ -577,8 +598,9 @@ class Node:
 
                             continue
 
+                        my_id = str(self.host.get_id())
                         for peer in peers:
-                            if peer["peer_id"] == self.host.get_id():
+                            if str(peer["peer_id"]) == my_id:
                                 peers.remove(peer)
                                 break
 
@@ -921,8 +943,17 @@ class Node:
                 client = PinataClient()
 
                 with tempfile.NamedTemporaryFile(delete=False, suffix=f"_{uploaded.filename}") as tmp:
-                    uploaded.save(tmp)
                     tmp_path = tmp.name
+                # NOTE: do not use FileStorage.save() here — it relies on
+                # aiofiles (asyncio-only) and raises "no running event loop"
+                # under QuartTrio (Trio). The previous code called
+                # `uploaded.save(tmp)` WITHOUT awaiting it, so the coroutine
+                # never ran and a 0-byte file got pinned (the empty-file CID,
+                # QmbFMke1KXqnYyBBWxB74N4c5SBnJMVAiMNRcGu6x1AwQH). Read the
+                # parsed upload stream and write it ourselves instead.
+                uploaded.stream.seek(0)
+                with open(tmp_path, "wb") as f:
+                    f.write(uploaded.stream.read())
 
                 try:
                     cid = client.upload_file(tmp_path)
@@ -949,8 +980,17 @@ class Node:
                 client = PinataClient()
 
                 with tempfile.NamedTemporaryFile(delete=False, suffix=f"_{uploaded.filename}") as tmp:
-                    uploaded.save(tmp)
                     tmp_path = tmp.name
+                # NOTE: do not use FileStorage.save() here — it relies on
+                # aiofiles (asyncio-only) and raises "no running event loop"
+                # under QuartTrio (Trio). The previous code called
+                # `uploaded.save(tmp)` WITHOUT awaiting it, so the coroutine
+                # never ran and a 0-byte file got pinned (the empty-file CID,
+                # QmbFMke1KXqnYyBBWxB74N4c5SBnJMVAiMNRcGu6x1AwQH). Read the
+                # parsed upload stream and write it ourselves instead.
+                uploaded.stream.seek(0)
+                with open(tmp_path, "wb") as f:
+                    f.write(uploaded.stream.read())
 
                 try:
                     # Read file, chunk it, upload each chunk, create manifest

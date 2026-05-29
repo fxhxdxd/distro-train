@@ -505,7 +505,7 @@ export const ProjectDetailsModal = ({
       onClose={() => setShowAggregation(false)}
       project={localProject}
       onGlobalWeightsSaved={(gw) =>
-        setLocalProject((prev) => ({ ...prev, globalWeights: gw }))
+        setLocalProject((prev) => (prev ? { ...prev, globalWeights: gw } : prev))
       }
     />
     </>
