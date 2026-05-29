@@ -50,11 +50,11 @@ export const PaymentPhase = () => {
         /* Loading State */
         <div className='p-8'>
           <div className='text-center'>
-            <div className='relative mb-6'>
-              <div className='w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto border-2 border-primary/20'>
+            <div className='relative w-20 h-20 mx-auto mb-6'>
+              <div className='w-full h-full bg-primary/10 rounded-full flex items-center justify-center border-2 border-primary/20'>
                 <Wallet className='w-10 h-10 text-primary animate-pulse' />
               </div>
-              <div className='absolute -top-1 -right-1 w-6 h-6 bg-primary rounded-full animate-ping'></div>
+              <div className='absolute -top-1 -right-1 w-5 h-5 bg-primary/60 rounded-full animate-ping'></div>
             </div>
 
             <h2 className='text-2xl font-bold text-text-primary mb-3'>
@@ -113,7 +113,7 @@ export const PaymentPhase = () => {
         /* Payment Form */
         <>
           {/* Header */}
-          <div className='bg-gradient-to-r from-primary/10 to-primary/5 p-6 border-b border-border'>
+          <div className='p-6 border-b border-border bg-background/40'>
             <div className='flex items-center gap-4'>
               <div className='w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center border border-primary/30'>
                 <CreditCard className='w-6 h-6 text-primary' />

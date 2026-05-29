@@ -2,12 +2,12 @@
 
 @theme {
   /* Custom Colors - these create utilities like bg-background, text-text-primary, etc. */
-  --color-background: #0a0a0a;
-  --color-surface: #1a1a1a;
-  --color-primary: #646cff;
-  --color-border: #2a2a2a;
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #a0a0a0;
+  --color-background: #0d0e12;
+  --color-surface: #16181f;
+  --color-primary: #ededed;
+  --color-border: #262932;
+  --color-text-primary: #ededed;
+  --color-text-secondary: #8a8f99;
 
   /* Font Family */
   --font-family-sans: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
