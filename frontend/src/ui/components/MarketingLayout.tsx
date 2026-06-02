@@ -6,7 +6,7 @@ import logo from '../assets/logo.png';
 
 const MarketingLayout = () => {
     const navigate = useNavigate();
-    const githubUrl = 'https://github.com/fxhxdxd';
+    const githubUrl = 'https://github.com/fxhxdxd/distro-train';
 
     // Enable smooth scrolling on the document level when in this layout
     useEffect(() => {
@@ -81,7 +81,7 @@ const MarketingLayout = () => {
                             href={githubUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            aria-label="Fahad Khan on GitHub"
+                            aria-label="distro-train on GitHub"
                             className="hover:text-white transition-colors"
                         >
                             <Github className="w-5 h-5" />
