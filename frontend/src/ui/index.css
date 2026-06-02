@@ -75,8 +75,9 @@
     min-height: 100vh;
     background-color: var(--color-background);
     background-image:
-      radial-gradient(circle at 15% 50%, rgba(168, 85, 247, 0.15) 0%, transparent 50%),
-      radial-gradient(circle at 85% 30%, rgba(217, 70, 239, 0.15) 0%, transparent 50%);
+      linear-gradient(135deg, rgba(217, 70, 239, 0.1), transparent 28%),
+      radial-gradient(circle at 85% 18%, rgba(168, 85, 247, 0.14) 0%, transparent 34%),
+      linear-gradient(to bottom, #03000a 0%, #070012 58%, #03000a 100%);
     color: var(--color-text-primary);
     font-family: var(--font-family-sans);
     -webkit-font-smoothing: antialiased;
@@ -99,11 +100,31 @@
   }
 
   .glass-panel {
-    background: rgba(255, 255, 255, 0.03);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.025));
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.095);
+    box-shadow: 0 22px 70px rgba(0, 0, 0, 0.28);
+  }
+
+  .dashboard-panel {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.022)),
+      rgba(10, 4, 24, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.095);
+    box-shadow: 0 22px 70px rgba(0, 0, 0, 0.28);
+  }
+
+  .dashboard-input {
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  }
+
+  .dashboard-input:focus {
+    border-color: rgba(217, 70, 239, 0.72);
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.16);
+    background: rgba(255, 255, 255, 0.065);
   }
 
   .glass-pill {

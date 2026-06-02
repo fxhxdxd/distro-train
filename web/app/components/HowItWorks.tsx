@@ -64,7 +64,7 @@ export default function HowItWorks() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <p className="text-xs font-mono tracking-widest text-indigo-400 uppercase mb-3">
+          <p className="text-xs font-mono tracking-widest text-fuchsia-400 uppercase mb-3">
             Workflow
           </p>
           <h2 className="text-3xl md:text-4xl font-semibold text-zinc-100 mb-4">
@@ -79,7 +79,7 @@ export default function HowItWorks() {
         {/* Steps */}
         <div className="relative">
           {/* Connecting line (desktop) */}
-          <div className="hidden lg:block absolute top-10 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent" />
+          <div className="hidden lg:block absolute top-10 left-0 right-0 h-px bg-gradient-to-r from-transparent via-fuchsia-500/20 to-transparent" />
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             {steps.map((step, i) => (
@@ -92,8 +92,8 @@ export default function HowItWorks() {
                 className="relative flex flex-col"
               >
                 {/* Icon */}
-                <div className="w-10 h-10 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-4 relative z-10">
-                  <step.icon className="w-5 h-5 text-indigo-400" />
+                <div className="w-10 h-10 rounded-lg bg-fuchsia-500/10 border border-fuchsia-500/20 flex items-center justify-center mb-4 relative z-10">
+                  <step.icon className="w-5 h-5 text-fuchsia-400" />
                 </div>
 
                 {/* Number */}

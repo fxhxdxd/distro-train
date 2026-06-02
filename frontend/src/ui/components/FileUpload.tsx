@@ -54,8 +54,8 @@ const FileUpload = ({ label, fileType, onFileSelect }: FileUploadProps) => {
     : '';
 
   return (
-    <div>
-      <label className='block text-sm font-medium text-text-secondary mb-2'>
+    <div className='min-w-0'>
+      <label className='mb-2 block text-sm font-semibold text-text-primary'>
         {label}
       </label>
       {/* Hidden file input for web browser */}
@@ -76,20 +76,27 @@ const FileUpload = ({ label, fileType, onFileSelect }: FileUploadProps) => {
         />
       )}
       {selectedFile ? (
-        <div className='flex items-center justify-between bg-background p-3 rounded-lg border border-border'>
-          <div className='flex items-center gap-3 overflow-hidden'>
-            <FileIcon className='text-primary shrink-0' size={20} />
-            <span
-              className='text-text-primary text-sm truncate'
-              title={fileName || ''}
-            >
-              {fileName}
-            </span>
+        <div className='flex min-h-[154px] items-center justify-between rounded-2xl border border-primary/30 bg-primary/10 p-4'>
+          <div className='flex min-w-0 items-center gap-3 overflow-hidden'>
+            <div className='flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/15'>
+              <FileIcon className='text-primary-light' size={20} />
+            </div>
+            <div className='min-w-0'>
+              <span className='mb-1 block text-xs text-text-secondary'>
+                Selected file
+              </span>
+              <span
+                className='block truncate text-sm font-semibold text-text-primary'
+                title={fileName || ''}
+              >
+                {fileName}
+              </span>
+            </div>
           </div>
           <button
             type='button'
             onClick={removeFile}
-            className='text-text-secondary hover:text-red-500 ml-2'
+            className='ml-2 rounded-lg p-2 text-text-secondary transition-colors hover:bg-red-500/10 hover:text-red-400'
           >
             <X size={20} />
           </button>
@@ -98,11 +105,19 @@ const FileUpload = ({ label, fileType, onFileSelect }: FileUploadProps) => {
         <button
           type='button'
           onClick={handleFileSelect}
-          className='w-full border-2 border-dashed border-border rounded-lg p-8 flex flex-col items-center justify-center text-center hover:border-primary transition-colors cursor-pointer focus:outline-none'
+          className='group flex min-h-[154px] w-full cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-white/15 bg-white/[0.025] p-8 text-center transition-all hover:border-primary/60 hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40'
         >
-          <UploadCloud className='text-text-secondary' size={32} />
-          <p className='mt-2 text-sm text-text-secondary'>
+          <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 transition-all group-hover:border-primary/35 group-hover:bg-primary/15'>
+            <UploadCloud
+              className='text-text-secondary group-hover:text-primary-light'
+              size={26}
+            />
+          </div>
+          <p className='mt-4 text-sm font-medium text-text-primary'>
             Click to browse for your {fileType}
+          </p>
+          <p className='mt-1 text-xs text-text-secondary'>
+            Files stay local until you submit this step.
           </p>
         </button>
       )}

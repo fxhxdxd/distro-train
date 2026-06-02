@@ -32,57 +32,74 @@ const Sidebar = () => {
   };
 
   const linkClasses =
-    'focus:outline-none flex items-center gap-3 hover:bg-primary/10 p-2 rounded-lg transition-colors';
-  const activeLinkClasses = 'bg-primary/20 text-primary';
+    'focus:outline-none flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-text-secondary hover:text-text-primary hover:bg-white/5';
+  const activeLinkClasses =
+    'bg-gradient-to-r from-primary/25 to-primary-light/10 text-primary-light border border-primary/25 shadow-[0_10px_32px_rgba(168,85,247,0.12)]';
 
   return (
-    <aside className='w-64 bg-surface text-text-primary p-4 flex flex-col'>
-      <div className='mb-6'>
+    <aside className='relative z-10 hidden w-[292px] shrink-0 border-r border-white/10 bg-[#070011]/82 p-5 text-text-primary backdrop-blur-xl lg:flex lg:flex-col'>
+      <div className='mb-5'>
         <div
-          className='flex items-center gap-3 p-3 bg-primary/10 rounded-lg border border-primary/20 cursor-pointer'
+          className='dashboard-panel flex cursor-pointer items-center gap-3 rounded-2xl p-4 transition-all hover:border-primary/30'
           onClick={() => navigate('/')}
         >
-          <div className='w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center border border-primary/30'>
-            <Brain className='w-6 h-6 text-primary' />
+          <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/35 bg-gradient-to-br from-primary-light/30 to-primary/15 shadow-[0_0_28px_rgba(168,85,247,0.18)]'>
+            <Brain className='h-6 w-6 text-primary-light' />
           </div>
-          <div>
-            <h1 className='text-lg font-bold text-text-primary'>DecentraAI</h1>
-            <p className='text-xs text-text-secondary'>Neural Network</p>
+          <div className='min-w-0'>
+            <h1 className='text-xl font-bold text-text-primary'>DecentraAI</h1>
+            <p className='text-sm text-text-secondary'>Federated workspace</p>
           </div>
+        </div>
+      </div>
+
+      <div className='mb-5 grid grid-cols-2 gap-2'>
+        <div className='rounded-xl border border-white/10 bg-white/[0.035] p-3'>
+          <p className='text-xs text-text-secondary'>Network</p>
+          <p className='mt-1 text-sm font-semibold text-text-primary'>Hedera</p>
+        </div>
+        <div className='rounded-xl border border-white/10 bg-white/[0.035] p-3'>
+          <p className='text-xs text-text-secondary'>Storage</p>
+          <p className='mt-1 text-sm font-semibold text-text-primary'>IPFS</p>
         </div>
       </div>
 
       <div className='mb-6'>
         {!isConnected ? (
-          <div className='p-3 bg-background/50 border border-border rounded-lg'>
-            <div className='flex items-center gap-2 mb-2'>
-              <Wallet className='w-4 h-4 text-text-secondary' />
-              <span className='text-sm font-medium text-text-secondary'>
-                Wallet
+          <div className='rounded-2xl border border-white/10 bg-white/[0.035] p-4'>
+            <div className='mb-3 flex items-center justify-between'>
+              <div className='flex items-center gap-2'>
+                <Wallet className='h-4 w-4 text-primary-light' />
+                <span className='text-sm font-medium text-text-primary'>
+                  Wallet
+                </span>
+              </div>
+              <span className='rounded-full border border-yellow-400/20 bg-yellow-400/10 px-2 py-0.5 text-xs text-yellow-200'>
+                Required
               </span>
             </div>
             <button
               onClick={actions.connect}
-              className='w-full bg-primary text-background text-sm font-medium py-2 px-3 rounded-lg hover:bg-primary/90 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50'
+              className='w-full rounded-xl bg-gradient-to-r from-primary-light to-primary px-3 py-3 text-sm font-semibold text-white transition-all duration-200 hover:shadow-[0_0_24px_rgba(217,70,239,0.24)] focus:outline-none focus:ring-2 focus:ring-primary/50'
             >
               Connect Wallet
             </button>
-            <p className='text-xs text-text-secondary mt-2 text-center'>
-              Required for training
+            <p className='mt-3 text-center text-xs text-text-secondary'>
+              Unlock payments and trainer assignment.
             </p>
           </div>
         ) : (
-          <div className='bg-primary/10 border border-primary/20 rounded-lg overflow-hidden'>
+          <div className='overflow-hidden rounded-2xl border border-primary/25 bg-primary/10'>
             <button
               onClick={() => setIsWalletExpanded(!isWalletExpanded)}
-              className='w-full p-3 flex items-center justify-between hover:bg-primary/20 transition-colors duration-200'
+              className='flex w-full items-center justify-between p-4 transition-colors duration-200 hover:bg-primary/15'
             >
-              <div className='flex items-center gap-2'>
-                <div className='w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center'>
-                  <Wallet className='w-3 h-3 text-primary' />
+              <div className='flex min-w-0 items-center gap-3'>
+                <div className='flex h-9 w-9 items-center justify-center rounded-xl border border-primary/30 bg-primary/20'>
+                  <Wallet className='h-4 w-4 text-primary-light' />
                 </div>
-                <div className='text-left'>
-                  <p className='text-sm font-medium text-text-primary'>
+                <div className='min-w-0 text-left'>
+                  <p className='truncate text-sm font-medium text-text-primary'>
                     {accountId}
                   </p>
                   <p className='text-xs text-primary font-mono'>
@@ -98,22 +115,22 @@ const Sidebar = () => {
             </button>
 
             {isWalletExpanded && (
-              <div className='border-t border-primary/20 p-3 space-y-2'>
+              <div className='space-y-2 border-t border-primary/20 p-3'>
                 <button
                   onClick={() => copyToClipboard(accountId)}
-                  className='w-full flex items-center gap-2 p-2 text-xs text-text-secondary hover:text-text-primary hover:bg-primary/10 rounded transition-colors duration-200'
+                  className='flex w-full items-center gap-2 rounded-lg p-2 text-xs text-text-secondary transition-colors duration-200 hover:bg-primary/10 hover:text-text-primary'
                 >
                   <Copy className='w-3 h-3' /> Copy Address
                 </button>
                 <button
                   onClick={openInExplorer}
-                  className='w-full flex items-center gap-2 p-2 text-xs text-text-secondary hover:text-text-primary hover:bg-primary/10 rounded transition-colors duration-200'
+                  className='flex w-full items-center gap-2 rounded-lg p-2 text-xs text-text-secondary transition-colors duration-200 hover:bg-primary/10 hover:text-text-primary'
                 >
                   <ExternalLink className='w-3 h-3' /> View on Explorer
                 </button>
                 <button
                   onClick={actions.disconnect}
-                  className='w-full flex items-center gap-2 p-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors duration-200'
+                  className='flex w-full items-center gap-2 rounded-lg p-2 text-xs text-red-400 transition-colors duration-200 hover:bg-red-500/10 hover:text-red-300'
                 >
                   <LogOut className='w-3 h-3' /> Disconnect
                 </button>
@@ -123,6 +140,9 @@ const Sidebar = () => {
         )}
       </div>
 
+      <div className='mb-3 px-2 text-xs font-semibold uppercase text-text-secondary/70'>
+        Workspace
+      </div>
       <nav className='flex flex-col gap-2'>
         <NavLink
           to='/training'
@@ -143,7 +163,19 @@ const Sidebar = () => {
           <span>Training History</span>
         </NavLink>
       </nav>
-      <nav className='flex flex-col gap-2 mt-auto pt-4 border-t border-border'>
+      <div className='mt-auto rounded-2xl border border-white/10 bg-white/[0.035] p-4'>
+        <div className='flex items-center justify-between text-sm'>
+          <span className='text-text-secondary'>Privacy mode</span>
+          <span className='rounded-full bg-emerald-400/10 px-2 py-0.5 text-xs text-emerald-300'>
+            Local-first
+          </span>
+        </div>
+        <p className='mt-2 text-xs leading-relaxed text-text-secondary'>
+          Data is distributed through content-addressed URLs, not raw P2P
+          payloads.
+        </p>
+      </div>
+      <nav className='mt-4 flex flex-col gap-2 border-t border-white/10 pt-4'>
         <NavLink
           to='/settings'
           className={({ isActive }) =>
@@ -154,7 +186,7 @@ const Sidebar = () => {
           <span>Settings</span>
         </NavLink>
       </nav>
-      <div className='mt-4 pt-4 border-t border-border/50'>
+      <div className='mt-4 border-t border-white/10 pt-4'>
         <div className='text-center'>
           <p className='text-xs text-text-secondary'>© 2025 DecentraAI</p>
         </div>

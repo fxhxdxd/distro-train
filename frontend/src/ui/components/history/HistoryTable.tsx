@@ -74,7 +74,7 @@ export const HistoryTable = ({
   onDelete,
 }: HistoryTableProps) => {
   return (
-    <div className='glass-panel rounded-xl overflow-hidden'>
+    <div className='dashboard-panel overflow-hidden rounded-3xl'>
       {history.length === 0 ? (
         <div className='text-center py-16'>
           <div className='w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4'>
@@ -90,7 +90,7 @@ export const HistoryTable = ({
         </div>
       ) : (
         <>
-          <div className='bg-primary/5 border-b border-white/10 px-6 py-4'>
+          <div className='border-b border-white/10 bg-primary/5 px-6 py-5'>
             <h3 className='text-lg font-semibold text-text-primary flex items-center gap-2'>
               <FileText className='w-5 h-5 text-primary' />
               Training History ({history.length})
@@ -99,7 +99,7 @@ export const HistoryTable = ({
 
           <div className='hidden md:block overflow-x-auto'>
             <table className='min-w-full'>
-              <thead className='bg-white/5'>
+              <thead className='bg-white/[0.035]'>
                 <tr>
                   <th className='px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider'>
                     Project Details

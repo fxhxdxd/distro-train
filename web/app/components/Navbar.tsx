@@ -6,12 +6,12 @@ const GITHUB_URL = 'https://github.com/1Ayush-Petwal/Distro_Train_M';
 
 export default function Navbar() {
   return (
-    <header className="fixed top-0 inset-x-0 z-50 border-b border-white/[0.06] bg-[#080810]/80 backdrop-blur-md">
+    <header className="fixed top-0 inset-x-0 z-50 border-b border-white/[0.06] bg-[#03000a]/80 backdrop-blur-md">
       <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
         {/* Logo */}
         <a href="#" className="flex items-center gap-2 group">
-          <span className="w-2 h-2 rounded-full bg-indigo-500 group-hover:bg-indigo-400 transition-colors" />
-          <span className="text-sm font-semibold tracking-tight text-zinc-100">
+          <span className="w-2 h-2 rounded-full bg-fuchsia-500 group-hover:bg-fuchsia-400 transition-colors" />
+          <span className="text-sm font-semibold text-zinc-100">
             distro-train
           </span>
         </a>
@@ -58,7 +58,7 @@ export default function Navbar() {
           </a>
           <a
             href="#paper"
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-sm text-white bg-indigo-600 hover:bg-indigo-500 rounded-md transition-all"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-sm text-white bg-fuchsia-600 hover:bg-fuchsia-500 rounded-md transition-all"
           >
             <FileText className="w-3.5 h-3.5" />
             Paper

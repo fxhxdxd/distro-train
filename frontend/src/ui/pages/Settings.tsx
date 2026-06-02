@@ -80,38 +80,71 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className='min-h-full'>
-      <div className='glass-panel rounded-xl p-5 mb-6'>
-        <div className='flex items-center gap-3'>
-          <div className='w-10 h-10 bg-gradient-to-br from-primary-light/30 to-primary/20 rounded-lg flex items-center justify-center border border-primary/30'>
-            <Settings className='w-5 h-5 text-primary-light' />
+    <div className='min-h-full space-y-6'>
+      <section className='dashboard-panel rounded-3xl p-6 lg:p-8'>
+        <div className='flex items-start gap-4'>
+          <div className='flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-primary/35 bg-gradient-to-br from-primary-light/35 to-primary/15'>
+            <Settings className='h-7 w-7 text-primary-light' />
           </div>
           <div>
-            <h1 className='text-2xl font-bold text-text-primary'>Settings</h1>
-            <p className='text-sm text-text-secondary mt-0.5'>
-              Manage your API credentials and preferences.
+            <h1 className='text-3xl font-bold text-text-primary'>Settings</h1>
+            <p className='mt-2 max-w-xl text-sm leading-relaxed text-text-secondary'>
+              Manage credentials used by the decentralized storage pipeline.
+              Values are saved locally for this desktop app.
             </p>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className='max-w-2xl'>
-        <div className='bg-primary/5 border border-primary/20 rounded-lg p-4 mb-6'>
-          <div className='flex items-start gap-3'>
-            <Shield className='w-5 h-5 text-primary mt-0.5' />
-            <div>
-              <h3 className='font-medium text-text-primary'>
-                Secure Credentials Storage
-              </h3>
-              <p className='text-sm text-text-secondary mt-1'>
-                Your API credentials are stored locally and never sent to
-                external servers.
-              </p>
+      <div className='grid max-w-5xl gap-6 lg:grid-cols-[1fr_360px]'>
+        <div className='order-2 lg:order-2'>
+          <div className='rounded-3xl border border-primary/20 bg-primary/10 p-5'>
+            <div className='flex items-start gap-3'>
+              <Shield className='mt-0.5 h-5 w-5 text-primary-light' />
+              <div>
+                <h3 className='font-medium text-text-primary'>
+                  Secure Credentials Storage
+                </h3>
+                <p className='mt-1 text-sm text-text-secondary'>
+                  Your API credentials are stored locally and never sent to
+                  external servers.
+                </p>
+              </div>
             </div>
+          </div>
+          <div className='mt-4 rounded-3xl border border-white/10 bg-white/[0.035] p-5'>
+            <h3 className='mb-2 font-medium text-text-primary'>
+              Need help getting your credentials?
+            </h3>
+            <p className='mb-3 text-sm text-text-secondary'>
+              Sign up at Pinata.cloud and generate your API Key and Secret Key
+              from the API Keys section of your dashboard.
+            </p>
+            <a
+              href='https://docs.pinata.cloud/account-management/api-keys'
+              target='_blank'
+              rel='noopener noreferrer'
+              className='inline-flex items-center gap-2 text-sm font-medium text-primary-light hover:text-primary'
+            >
+              Go to Pinata Documentation
+              <svg
+                className='h-3 w-3'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14'
+                />
+              </svg>
+            </a>
           </div>
         </div>
 
-        <div className='glass-panel rounded-xl overflow-hidden'>
+        <div className='order-1 dashboard-panel overflow-hidden rounded-3xl'>
           <div className='p-6 border-b border-white/10 bg-primary/5'>
             <h2 className='text-lg font-semibold text-text-primary'>
               Pinata Credentials
@@ -135,9 +168,9 @@ const SettingsPage = () => {
                     name='pinataApiKey'
                     value={localSettings.pinataApiKey}
                     onChange={handleChange}
-                    className={`w-full bg-white/5 border ${
+                    className={`dashboard-input w-full ${
                       errors.pinataApiKey ? 'border-red-500' : 'border-border'
-                    } text-text-primary rounded-lg p-3 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors`}
+                    } rounded-2xl p-3 pr-12 text-text-primary focus:outline-none`}
                     placeholder='Enter your Pinata API Key'
                   />
                   <button
@@ -172,11 +205,11 @@ const SettingsPage = () => {
                     name='pinataSecretKey'
                     value={localSettings.pinataSecretKey}
                     onChange={handleChange}
-                    className={`w-full bg-white/5 border ${
+                    className={`dashboard-input w-full ${
                       errors.pinataSecretKey
                         ? 'border-red-500'
                         : 'border-border'
-                    } text-text-primary rounded-lg p-3 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors`}
+                    } rounded-2xl p-3 pr-12 text-text-primary focus:outline-none`}
                     placeholder='Enter your Pinata Secret Key'
                   />
                   <button
@@ -203,7 +236,7 @@ const SettingsPage = () => {
               <button
                 type='submit'
                 disabled={isLoading}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all ${
+                className={`flex-1 flex items-center justify-center gap-2 rounded-2xl px-4 py-3 font-medium transition-all ${
                   isLoading
                     ? 'bg-primary/20 text-text-secondary cursor-not-allowed'
                     : 'bg-gradient-to-r from-primary-light to-primary text-white hover:shadow-[0_0_24px_rgba(217,70,239,0.24)] active:scale-[0.98]'
@@ -225,36 +258,6 @@ const SettingsPage = () => {
           </form>
         </div>
 
-        <div className='mt-6 p-4 glass-panel rounded-lg'>
-          <h3 className='font-medium text-text-primary mb-2'>
-            Need help getting your credentials?
-          </h3>
-          <p className='text-sm text-text-secondary mb-3'>
-            Sign up at Pinata.cloud and generate your API Key and Secret Key
-            from the API Keys section of your dashboard.
-          </p>
-          <a
-            href='https://docs.pinata.cloud/account-management/api-keys'
-            target='_blank'
-            rel='noopener noreferrer'
-            className='inline-flex items-center gap-2 text-primary hover:text-primary/80 text-sm font-medium'
-          >
-            Go to Pinata Documentation
-            <svg
-              className='w-3 h-3'
-              fill='none'
-              stroke='currentColor'
-              viewBox='0 0 24 24'
-            >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14'
-              />
-            </svg>
-          </a>
-        </div>
       </div>
     </div>
   );

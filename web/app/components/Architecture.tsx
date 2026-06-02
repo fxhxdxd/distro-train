@@ -8,7 +8,7 @@ const layers = [
     icon: Network,
     title: 'P2P Layer',
     subtitle: 'py-libp2p + GossipSub',
-    color: 'indigo',
+    color: 'fuchsia',
     features: [
       'Ed25519 peer identity — each node is its public key',
       'GossipSub pubsub: degree=20, heartbeat=5s',
@@ -46,7 +46,7 @@ const layers = [
 ];
 
 const colorMap: Record<string, string> = {
-  indigo: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
+  fuchsia: 'text-fuchsia-400 bg-fuchsia-500/10 border-fuchsia-500/20',
   violet: 'text-violet-400 bg-violet-500/10 border-violet-500/20',
   purple: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
 };
@@ -63,7 +63,7 @@ export default function Architecture() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <p className="text-xs font-mono tracking-widest text-indigo-400 uppercase mb-3">
+          <p className="text-xs font-mono tracking-widest text-fuchsia-400 uppercase mb-3">
             Architecture
           </p>
           <h2 className="text-3xl md:text-4xl font-semibold text-zinc-100 mb-4">
@@ -115,12 +115,12 @@ export default function Architecture() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.55, delay: 0.35 }}
-          className="card-glass rounded-xl p-6 border border-indigo-500/10"
-          style={{ background: 'rgba(99,102,241,0.04)' }}
+          className="card-glass rounded-xl p-6 border border-fuchsia-500/10"
+          style={{ background: 'rgba(168,85,247,0.04)' }}
         >
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-5 h-5 text-indigo-400" />
+            <div className="w-10 h-10 rounded-lg bg-fuchsia-500/10 border border-fuchsia-500/20 flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-5 h-5 text-fuchsia-400" />
             </div>
             <div>
               <h3 className="text-base font-semibold text-zinc-100 mb-1">
