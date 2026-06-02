@@ -334,7 +334,7 @@ const Homepage = () => {
               TrustGossip Security Architecture
             </div>
             <h2 className='text-4xl md:text-5xl font-bold text-text-primary mb-6'>
-              Secure by Design, Not by Assumption
+              Security-First by Design
             </h2>
             <p className='text-xl text-text-secondary max-w-3xl mx-auto'>
               Distro-train protects the full path from peer admission to
@@ -380,16 +380,6 @@ const Homepage = () => {
                 ))}
               </div>
 
-              <div className='mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-5'>
-                <p className='text-sm leading-relaxed text-amber-100/80'>
-                  <span className='font-semibold text-amber-200'>
-                    Honest boundary:
-                  </span>{' '}
-                  Byzantine defenses are designed for malicious-neighbor
-                  fractions below 50%. Above that boundary, robust estimators
-                  and bucketing lose their mathematical guarantees.
-                </p>
-              </div>
             </div>
 
             <div className='space-y-4'>
