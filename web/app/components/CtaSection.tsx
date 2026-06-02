@@ -17,8 +17,8 @@ export default function CtaSection() {
           className="relative rounded-2xl overflow-hidden p-10 text-center"
           style={{
             background:
-              'linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(168,85,247,0.08) 50%, rgba(99,102,241,0.06) 100%)',
-            border: '1px solid rgba(99,102,241,0.2)',
+              'linear-gradient(135deg, rgba(168,85,247,0.1) 0%, rgba(168,85,247,0.08) 50%, rgba(168,85,247,0.06) 100%)',
+            border: '1px solid rgba(168,85,247,0.2)',
           }}
         >
           {/* Glow */}
@@ -26,12 +26,12 @@ export default function CtaSection() {
             className="absolute inset-0 pointer-events-none"
             style={{
               background:
-                'radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.15) 0%, transparent 60%)',
+                'radial-gradient(ellipse at 50% 0%, rgba(168,85,247,0.15) 0%, transparent 60%)',
             }}
           />
 
           <div className="relative z-10">
-            <p className="text-xs font-mono tracking-widest text-indigo-400 uppercase mb-4">
+            <p className="text-xs font-mono tracking-widest text-fuchsia-400 uppercase mb-4">
               Open source
             </p>
             <h2 className="text-3xl md:text-4xl font-semibold text-zinc-100 mb-4">
@@ -57,7 +57,7 @@ export default function CtaSection() {
               </a>
               <a
                 href="#demo"
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium rounded-lg transition-colors border border-indigo-500/30"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-fuchsia-600/80 hover:bg-fuchsia-600 text-white font-medium rounded-lg transition-colors border border-fuchsia-500/30"
               >
                 <Play className="w-4 h-4" />
                 Watch Demo

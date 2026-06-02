@@ -33,28 +33,28 @@ export default function Hero() {
           className="w-[700px] h-[500px] rounded-full blur-[140px]"
           style={{
             background:
-              'radial-gradient(ellipse, rgba(99,102,241,0.18) 0%, transparent 70%)',
+              'radial-gradient(ellipse, rgba(168,85,247,0.18) 0%, transparent 70%)',
           }}
         />
       </div>
 
       {/* Fade bottom edge */}
-      <div className="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-[#080810] to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-[#03000a] to-transparent pointer-events-none" />
 
       <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
         {/* Badge */}
         <motion.div
           {...fadeUp(0)}
-          className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 text-xs font-medium tracking-wide mb-8"
+          className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300 text-xs font-medium tracking-wide mb-8"
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-400 animate-pulse" />
           B.Tech Project · LNMIIT Jaipur · 2026
         </motion.div>
 
         {/* Headline */}
         <motion.h1
           {...fadeUp(0.08)}
-          className="text-5xl md:text-7xl lg:text-8xl font-semibold tracking-tight leading-[1.08] mb-6"
+          className="text-5xl md:text-7xl lg:text-8xl font-semibold leading-[1.08] mb-6"
         >
           <span className="text-zinc-100">Train any model.</span>
           <br />
@@ -81,7 +81,7 @@ export default function Hero() {
         >
           <a
             href="#demo"
-            className="group flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg transition-all duration-200 shadow-lg shadow-indigo-600/25"
+            className="group flex items-center gap-2 px-6 py-3 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-medium rounded-lg transition-all duration-200 shadow-lg shadow-fuchsia-600/25"
           >
             <Play className="w-4 h-4" />
             Watch Demo

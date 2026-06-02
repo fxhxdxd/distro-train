@@ -7,7 +7,7 @@ export default function Footer() {
     <footer className="border-t border-white/[0.06] py-8 px-6">
       <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-indigo-500" />
+          <span className="w-2 h-2 rounded-full bg-fuchsia-500" />
           <span className="text-sm text-zinc-500">
             <span className="text-zinc-300 font-medium">distro-train</span> ·
             Built by{' '}
