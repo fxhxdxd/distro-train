@@ -5,13 +5,15 @@ import TitleBar from './TitleBar';
 
 const Layout = () => {
   return (
-    <div className='flex flex-col h-screen bg-background font-sans'>
+    <div className='flex flex-col h-screen bg-background font-sans text-text-primary'>
       <TitleBar />
-      {/* <MenuBar /> */}
-      <div className='flex flex-1 overflow-hidden'>
+      <div className='relative flex flex-1 overflow-hidden'>
+        <div className='pointer-events-none absolute inset-0 bg-mesh-grid opacity-60' />
         <Sidebar />
-        <main className='flex-1 p-8 overflow-y-auto no-scrollbar'>
-          <Outlet />
+        <main className='relative flex-1 overflow-y-auto no-scrollbar'>
+          <div className='mx-auto w-full max-w-[1440px] px-6 py-6 lg:px-10 lg:py-8'>
+            <Outlet />
+          </div>
           <Toaster
             richColors
             theme='dark'
