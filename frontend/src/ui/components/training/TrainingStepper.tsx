@@ -28,8 +28,9 @@ export const TrainingStepper = () => {
   const currentPhaseNumber = getPhaseStep(currentPhase);
 
   return (
-    <div className='rounded-2xl border border-white/10 px-4 py-5'>
-      <div className='grid gap-4 md:grid-cols-4'>
+    <div className='relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.025] px-5 py-6'>
+      <div className='pointer-events-none absolute inset-x-8 top-1/2 hidden h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent md:block' />
+      <div className='relative grid gap-4 md:grid-cols-4'>
         {steps.map((step, index) => {
           const stepNumber = index + 1;
           const isActive = currentPhaseNumber > stepNumber;
@@ -38,22 +39,24 @@ export const TrainingStepper = () => {
           return (
             <React.Fragment key={index}>
               <div
-                className='relative flex items-center gap-3 md:flex-col md:items-start'
+                className='group relative flex items-center gap-4 md:flex-col md:items-center md:text-center'
               >
                 {index < steps.length - 1 && (
                   <div
-                    className={`absolute left-[3.5rem] right-[-1rem] top-5 hidden h-px md:block ${
-                      isActive ? 'bg-primary/70' : 'bg-white/10'
+                    className={`absolute left-[calc(50%+2.25rem)] right-[calc(-50%+2.25rem)] top-6 hidden h-[2px] rounded-full md:block ${
+                      isActive
+                        ? 'bg-gradient-to-r from-primary-light to-primary'
+                        : 'bg-white/10'
                     }`}
                   />
                 )}
                 <div
-                  className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl border transition-all duration-300 ${
+                  className={`relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border transition-all duration-300 md:mb-3 ${
                     isActive
-                      ? 'border-primary bg-gradient-to-br from-primary-light to-primary text-white shadow-lg shadow-primary/20'
+                      ? 'border-primary bg-gradient-to-br from-primary-light to-primary text-white shadow-[0_0_32px_rgba(168,85,247,0.3)]'
                       : isCurrent
-                        ? 'border-primary bg-primary/25 text-white'
-                        : 'border-white/10 bg-white/5 text-text-secondary'
+                        ? 'border-primary/70 bg-primary/25 text-white shadow-[0_0_30px_rgba(217,70,239,0.18)]'
+                        : 'border-white/10 bg-[#0d0618] text-text-secondary group-hover:border-primary/30 group-hover:text-primary-light'
                   }`}
                 >
                   {isActive ? (
@@ -72,9 +75,24 @@ export const TrainingStepper = () => {
                   >
                     {step.label}
                   </span>
-                  <span className='mt-1 block text-xs text-text-secondary'>
+                  <span
+                    className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                      isActive || isCurrent
+                        ? 'bg-primary/15 text-primary-light'
+                        : 'bg-white/5 text-text-secondary'
+                    }`}
+                  >
                     0{stepNumber}
                   </span>
+                  <div
+                    className={`mx-auto mt-3 hidden h-1 w-10 rounded-full md:block ${
+                      isCurrent
+                        ? 'bg-primary-light'
+                        : isActive
+                          ? 'bg-primary/60'
+                          : 'bg-transparent'
+                    }`}
+                  />
                 </div>
               </div>
             </React.Fragment>

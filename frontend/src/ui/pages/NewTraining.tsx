@@ -12,7 +12,6 @@ import {
   Sparkles,
   Upload,
   Users,
-  X,
 } from 'lucide-react';
 import { useTraining } from '../contexts/TrainingContext';
 import { TrainingStepper } from '../components/training/TrainingStepper';
@@ -195,15 +194,6 @@ const NewTrainingPage = () => {
           <div className='relative w-full max-w-4xl overflow-hidden rounded-[2rem] border border-white/10 bg-[#090214] shadow-[0_40px_140px_rgba(0,0,0,0.65)]'>
             <div className='pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-primary/30 blur-[110px]' />
             <div className='pointer-events-none absolute -bottom-32 right-0 h-80 w-80 rounded-full bg-primary-light/20 blur-[120px]' />
-
-            <button
-              type='button'
-              onClick={closeGuide}
-              className='absolute right-5 top-5 z-10 rounded-xl border border-white/10 bg-white/5 p-2 text-text-secondary transition-colors hover:bg-white/10 hover:text-white'
-              aria-label='Close guide'
-            >
-              <X className='h-5 w-5' />
-            </button>
 
             <div className='relative grid gap-0 lg:grid-cols-[320px_1fr]'>
               <aside className='border-b border-white/10 bg-white/[0.025] p-6 lg:border-b-0 lg:border-r'>
