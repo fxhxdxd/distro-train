@@ -1,5 +1,5 @@
 import React from 'react';
-import { Upload, Users, Coins, Play } from 'lucide-react';
+import { Check, Upload, Users, Coins, Play } from 'lucide-react';
 import {
   useTraining,
   type TrainingPhase,
@@ -28,8 +28,8 @@ export const TrainingStepper = () => {
   const currentPhaseNumber = getPhaseStep(currentPhase);
 
   return (
-    <div className='mb-8 glass-panel rounded-xl p-5'>
-      <div className='flex items-start'>
+    <div className='dashboard-panel rounded-2xl p-4 lg:p-5'>
+      <div className='grid gap-3 md:grid-cols-4'>
         {steps.map((step, index) => {
           const stepNumber = index + 1;
           const isActive = currentPhaseNumber > stepNumber;
@@ -37,38 +37,52 @@ export const TrainingStepper = () => {
 
           return (
             <React.Fragment key={index}>
-              <div className='flex flex-col items-center'>
+              <div
+                className={`relative rounded-2xl border p-4 transition-all ${
+                  isActive
+                    ? 'border-primary/30 bg-primary/10'
+                    : isCurrent
+                      ? 'border-primary/50 bg-gradient-to-br from-primary/20 to-primary-light/10 shadow-[0_0_28px_rgba(168,85,247,0.16)]'
+                      : 'border-white/10 bg-white/[0.025]'
+                }`}
+              >
+                {index < steps.length - 1 && (
+                  <div
+                    className={`absolute left-[calc(100%+0.35rem)] top-1/2 hidden h-px w-[calc(100%-0.7rem)] md:block ${
+                      isActive ? 'bg-primary/70' : 'bg-white/10'
+                    }`}
+                  />
+                )}
                 <div
-                  className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 border ${
+                  className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl border transition-all duration-300 ${
                     isActive
-                      ? 'bg-gradient-to-br from-primary-light to-primary text-white border-primary shadow-lg shadow-primary/20'
+                      ? 'border-primary bg-gradient-to-br from-primary-light to-primary text-white shadow-lg shadow-primary/20'
                       : isCurrent
-                      ? 'bg-primary/30 text-white border-primary animate-pulse shadow-lg shadow-primary/10'
-                      : 'bg-white/5 border-white/10 text-text-secondary'
+                        ? 'border-primary bg-primary/25 text-white'
+                        : 'border-white/10 bg-white/5 text-text-secondary'
                   }`}
                 >
-                  <step.icon className='w-5 h-5' />
+                  {isActive ? (
+                    <Check className='h-5 w-5' />
+                  ) : (
+                    <step.icon className='h-5 w-5' />
+                  )}
                 </div>
-                <span
-                  className={`text-xs mt-2 whitespace-nowrap ${
+                <div className='flex items-center justify-between gap-3'>
+                  <span
+                    className={`text-sm font-semibold ${
                     isActive || isCurrent
                       ? 'text-text-primary'
                       : 'text-text-secondary'
-                  }`}
-                >
-                  {step.label}
-                </span>
-              </div>
-
-              {index < steps.length - 1 && (
-                <div className='flex-1 flex items-center h-10'>
-                  <div
-                    className={`w-full h-px transition-colors duration-500 ${
-                      isActive ? 'bg-primary' : 'bg-white/10'
                     }`}
-                  />
+                  >
+                    {step.label}
+                  </span>
+                  <span className='text-xs text-text-secondary'>
+                    0{stepNumber}
+                  </span>
                 </div>
-              )}
+              </div>
             </React.Fragment>
           );
         })}

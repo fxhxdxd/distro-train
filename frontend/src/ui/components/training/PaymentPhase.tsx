@@ -45,7 +45,7 @@ export const PaymentPhase = () => {
   const breakdown = calculateBreakdown(tokenAmount);
 
   return (
-    <div className='glass-panel rounded-xl overflow-hidden'>
+    <div className='dashboard-panel overflow-hidden rounded-3xl'>
       {isLoading ? (
         /* Loading State */
         <div className='p-8'>
@@ -113,10 +113,10 @@ export const PaymentPhase = () => {
         /* Payment Form */
         <>
           {/* Header */}
-          <div className='p-6 border-b border-white/10 bg-primary/5'>
+          <div className='border-b border-white/10 bg-primary/5 p-6'>
             <div className='flex items-center gap-4'>
-              <div className='w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center border border-primary/30'>
-                <CreditCard className='w-6 h-6 text-primary' />
+              <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/30 bg-primary/15'>
+                <CreditCard className='h-6 w-6 text-primary-light' />
               </div>
               <div>
                 <h2 className='text-2xl font-bold text-text-primary'>
@@ -147,9 +147,7 @@ export const PaymentPhase = () => {
                       step='0.1'
                       min='0.1'
                       placeholder='e.g., 0.5'
-                      className='w-full bg-white/5 border-2 border-white/10 text-text-primary rounded-lg p-4 text-lg font-medium
-                               focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary
-                               transition-all duration-200'
+                      className='dashboard-input w-full rounded-2xl p-4 text-lg font-medium text-text-primary focus:outline-none'
                       value={tokenAmount}
                       onChange={(e) => setTokenAmount(e.target.value)}
                     />
@@ -181,8 +179,8 @@ export const PaymentPhase = () => {
                         onClick={() => setTokenAmount(amount)}
                         className={`p-2 rounded-lg border transition-all duration-200 text-sm font-medium ${
                           tokenAmount === amount
-                            ? 'border-primary bg-primary/10 text-primary'
-                            : 'border-border bg-background text-text-secondary hover:border-primary/50'
+                            ? 'border-primary bg-primary/10 text-primary-light'
+                            : 'border-white/10 bg-white/[0.035] text-text-secondary hover:border-primary/50'
                         }`}
                       >
                         {amount}
@@ -193,7 +191,7 @@ export const PaymentPhase = () => {
               </div>
 
               {/* Cost Breakdown */}
-              <div className='bg-white/5 border border-white/10 rounded-lg p-5'>
+              <div className='rounded-2xl border border-white/10 bg-white/[0.035] p-5'>
                 <h4 className='text-lg font-semibold text-text-primary mb-4 flex items-center gap-2'>
                   <Shield className='w-5 h-5 text-primary' />
                   Payment Breakdown
