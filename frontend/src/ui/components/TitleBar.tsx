@@ -1,10 +1,11 @@
 import React from 'react';
-import { BrainCircuit, Minus, Copy, X } from 'lucide-react';
+import { Minus, Copy, X } from 'lucide-react';
 import {
   handleMinimize,
   handleMaximize,
   handleClose,
 } from '../utils/windowHelper';
+import logo from '../assets/logo.png';
 
 const TitleBar = () => {
   return (
@@ -15,8 +16,8 @@ const TitleBar = () => {
         className='flex-grow h-full flex items-center gap-3 px-4'
         style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
       >
-        <div className='w-7 h-7 bg-gradient-to-br from-primary-light/35 to-primary/20 rounded-lg flex items-center justify-center border border-primary/35 shadow-[0_0_20px_rgba(168,85,247,0.22)]'>
-          <BrainCircuit size={15} className='text-primary-light' />
+        <div className='w-7 h-7 rounded-lg flex items-center justify-center overflow-hidden border border-primary/35 bg-primary/10 shadow-[0_0_20px_rgba(168,85,247,0.22)]'>
+          <img src={logo} alt='DecentraAI Logo' className='h-full w-full object-contain' />
         </div>
         <span className='font-semibold text-text-primary text-sm'>
           DecentraAI
