@@ -353,11 +353,15 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
 
       await updateTrainingHistoryItem({ projectId, newStatus: 'Running', trainerCount });
 
-      const topicId = TopicId.fromString('0.0.6914391');
-      window.electronAPI.startLogSubscription({
-        projectId: projectId,
-        topicId: topicId.toString(),
-      });
+      // Live log streaming runs in the Electron main process over IPC; the
+      // browser has no equivalent, so skip it there (no-op).
+      if (window.electronAPI) {
+        const topicId = TopicId.fromString('0.0.6914391');
+        window.electronAPI.startLogSubscription({
+          projectId: projectId,
+          topicId: topicId.toString(),
+        });
+      }
 
       toast.success('Training is now in progress on the network!', {
         id: toastId,

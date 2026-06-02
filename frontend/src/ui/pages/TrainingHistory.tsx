@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   deleteHistoryItem,
   getTrainingHistory,
@@ -14,6 +14,7 @@ import {
 } from '../utils/hederaHelper';
 import { LogViewerModal } from '../components/history/LogViewerModal';
 import { CONTRACT_ID } from '../utils/constant';
+import { History } from 'lucide-react';
 
 export interface TrainingProject {
   id: string;
@@ -33,10 +34,19 @@ export interface TrainingProject {
 
 const TrainingHistoryPage = () => {
   const [history, setHistory] = useState<TrainingProject[]>([]);
-  const [selectedProject, setSelectedProject] =
-    useState<TrainingProject | null>(null);
-  const [logViewProject, setLogViewProject] = useState<TrainingProject | null>(
-    null
+
+  // Store only the ID so the modal always reflects the latest history entry,
+  // even when polling updates weightsMetadata after the modal is already open.
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const selectedProject = useMemo(
+    () => history.find((p) => p.id === selectedProjectId) ?? null,
+    [history, selectedProjectId]
+  );
+
+  const [logViewProjectId, setLogViewProjectId] = useState<string | null>(null);
+  const logViewProject = useMemo(
+    () => history.find((p) => p.id === logViewProjectId) ?? null,
+    [history, logViewProjectId]
   );
 
   useEffect(() => {
@@ -63,7 +73,7 @@ const TrainingHistoryPage = () => {
           // const isComplete = true;
 
           if (!isComplete) {
-            window.electronAPI.stopLogSubscription();
+            window.electronAPI?.stopLogSubscription();
             const weightsArray = await fetchWeightsSubmittedEvent(
               CONTRACT_ID,
               job.id
@@ -116,8 +126,8 @@ const TrainingHistoryPage = () => {
         );
         toast.success('Project history deleted.');
 
-        if (selectedProject?.id === projectId) {
-          setSelectedProject(null);
+        if (selectedProjectId === projectId) {
+          setSelectedProjectId(null);
         }
       } else {
         toast.error('Failed to delete project history.');
@@ -127,31 +137,40 @@ const TrainingHistoryPage = () => {
 
   return (
     <div>
-      <h1 className='text-3xl font-bold text-text-primary mb-2'>
-        Training History
-      </h1>
-      <p className='text-text-secondary mb-8'>
-        Overview of all your past and current training jobs.
-      </p>
+      <div className='pb-6 mb-6 border-b border-border'>
+        <div className='flex items-center gap-3'>
+          <div className='w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center border border-primary/20'>
+            <History className='w-5 h-5 text-primary' />
+          </div>
+          <div>
+            <h1 className='text-2xl font-bold text-text-primary'>
+              Training History
+            </h1>
+            <p className='text-sm text-text-secondary mt-0.5'>
+              Overview of all your past and current training jobs.
+            </p>
+          </div>
+        </div>
+      </div>
 
       <HistoryTable
         history={history}
-        onViewDetails={(project) => setSelectedProject(project)}
+        onViewDetails={(project) => setSelectedProjectId(project.id)}
         onDelete={handleDeleteProject}
-        onViewLogs={(project) => setLogViewProject(project)}
+        onViewLogs={(project) => setLogViewProjectId(project.id)}
       />
 
       <ProjectDetailsModal
-        isOpen={!!selectedProject}
+        isOpen={!!selectedProjectId}
         project={selectedProject}
-        onClose={() => setSelectedProject(null)}
+        onClose={() => setSelectedProjectId(null)}
         onDelete={handleDeleteProject}
       />
 
       <LogViewerModal
-        isOpen={!!logViewProject}
+        isOpen={!!logViewProjectId}
         project={logViewProject}
-        onClose={() => setLogViewProject(null)}
+        onClose={() => setLogViewProjectId(null)}
       />
     </div>
   );

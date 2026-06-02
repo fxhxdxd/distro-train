@@ -70,6 +70,34 @@ export const checkTaskStatus = async (taskId: string): Promise<boolean> => {
   }
 };
 
+/**
+ * Compute the keccak256 event-signature topic for a given ABI event name.
+ * Used to guard decoding so we never attempt to parse the wrong event type.
+ */
+function eventTopic(eventName: string): string {
+  const eventAbi = abi.find((e) => e.name === eventName && e.type === 'event');
+  if (!eventAbi || !eventAbi.inputs) {
+    throw new Error(`Event ABI for '${eventName}' not found`);
+  }
+  const web3 = new Web3();
+  const signature = `${eventName}(${(eventAbi.inputs as any[]).map((i: any) => i.type).join(',')})`;
+  return web3.utils.keccak256(signature);
+}
+
+// Cache topic hashes once at module load time.
+let _weightsSubmittedTopic: string | null = null;
+let _taskCreatedTopic: string | null = null;
+
+function getWeightsSubmittedTopic(): string {
+  if (!_weightsSubmittedTopic) _weightsSubmittedTopic = eventTopic('WeightsSubmitted');
+  return _weightsSubmittedTopic;
+}
+
+function getTaskCreatedTopic(): string {
+  if (!_taskCreatedTopic) _taskCreatedTopic = eventTopic('TaskCreated');
+  return _taskCreatedTopic;
+}
+
 function decodeEvent(eventName: string, log: any) {
   const eventAbi = abi.find(
     (event) => event.name === eventName && event.type === 'event'
@@ -77,6 +105,15 @@ function decodeEvent(eventName: string, log: any) {
   const web3 = new Web3();
   if (!eventAbi || !eventAbi.inputs) {
     throw new Error(`Event ABI for '${eventName}' not found or missing inputs`);
+  }
+
+  // Guard: reject the log immediately if topics[0] doesn't match this event's
+  // signature hash.  Without this check, events with identical indexed-param
+  // shapes (e.g. TaskCreated and WeightsSubmitted both have uint256 + address)
+  // silently decode each other's data and produce garbage weight entries.
+  const expectedTopic = eventTopic(eventName);
+  if (!log.topics || log.topics[0]?.toLowerCase() !== expectedTopic.toLowerCase()) {
+    throw new Error(`topics[0] mismatch for ${eventName}`);
   }
 
   const decodedLog = web3.eth.abi.decodeLog(
@@ -168,7 +205,13 @@ async function resolveOperatorId(evmAddress: string): Promise<string> {
   } catch {
     // mirror node unavailable — fall through to SDK
   }
-  return AccountId.fromSolidityAddress(evmAddress).toString();
+  try {
+    return AccountId.fromSolidityAddress(evmAddress).toString();
+  } catch {
+    // SDK conversion also failed (e.g. malformed address) — return raw value
+    // so the weight entry is never silently dropped.
+    return evmAddress;
+  }
 }
 
 /**
@@ -190,65 +233,103 @@ export async function fetchWeightsSubmittedEvent(
   contractId: string,
   taskId: string
 ): Promise<WeightEntry[] | null> {
+  // Allow the mirror node a few seconds to index the most recent transactions.
   await new Promise((res) => setTimeout(res, 5000));
 
-  const url = `https://testnet.mirrornode.hedera.com/api/v1/contracts/${contractId.toString()}/results/logs?order=desc&limit=100`;
+  const MIRROR = 'https://testnet.mirrornode.hedera.com';
   const foundWeights: WeightEntry[] = [];
   const seenCids = new Set<string>();
+
+  // Paginate through ALL contract logs (newest → oldest).
+  // We stop early once we encounter the TaskCreated event for this task,
+  // because no WeightsSubmitted events for this task can appear after that
+  // point in the descending order.
+  let nextUrl: string | null =
+    `${MIRROR}/api/v1/contracts/${contractId}/results/logs?order=desc&limit=100`;
+  const MAX_PAGES = 50; // safety cap (~5 000 logs)
+  let page = 0;
+
   try {
-    const response = await axios.get(url);
-    const jsonResponse = response.data;
-    console.log(
-      `Found ${jsonResponse.logs.length} total event(s) for the contract.`
-    );
+    while (nextUrl && page < MAX_PAGES) {
+      page++;
+      const response = await axios.get(nextUrl);
+      const { logs, links } = response.data as {
+        logs: any[];
+        links?: { next?: string };
+      };
 
-    for (const log of jsonResponse.logs) {
-      try {
-        const event = decodeEvent('WeightsSubmitted', log);
+      console.log(
+        `[fetchWeightsSubmittedEvent] page ${page}: ${logs.length} logs`
+      );
 
-        if ((event.taskId as string).toString() === taskId) {
-          const weightsHash = event.weightsHash as string;
-          const trainerAddress = await resolveOperatorId(event.trainer as string);
+      let taskCreatedSeen = false;
 
-          console.log(
-            `Found matching 'WeightsSubmitted' event for task ${taskId}:`,
-            event
-          );
-          console.log(`Weights Hash: ${weightsHash}`);
-          console.log(`Trainer: ${trainerAddress}`);
-          console.log(`Reward: ${event.rewardAmount}`);
+      for (const log of logs) {
+        // ── WeightsSubmitted ────────────────────────────────────────────────
+        try {
+          const event = decodeEvent('WeightsSubmitted', log);
 
-          const hashes = weightsHash.includes(',')
-            ? weightsHash.split(',').map((h) => h.trim()).filter(Boolean)
-            : [weightsHash.trim()];
+          if ((event.taskId as string).toString() === taskId) {
+            const weightsHash = event.weightsHash as string;
+            const trainerAddress = await resolveOperatorId(
+              event.trainer as string
+            );
 
-          for (const h of hashes) {
-            // Normalize to bare CID to avoid double-prefixing and duplicates
-            const cid = extractCid(h);
-            if (seenCids.has(cid)) {
-              console.log(`Skipping duplicate CID: ${cid}`);
-              continue;
+            console.log(
+              `WeightsSubmitted for task ${taskId}: trainer=${trainerAddress} hash=${weightsHash}`
+            );
+
+            const hashes = weightsHash.includes(',')
+              ? weightsHash.split(',').map((h) => h.trim()).filter(Boolean)
+              : [weightsHash.trim()];
+
+            for (const h of hashes) {
+              const cid = extractCid(h);
+              if (seenCids.has(cid)) {
+                console.log(`Skipping duplicate CID: ${cid}`);
+                continue;
+              }
+              seenCids.add(cid);
+
+              const presignedUrl = await generatePresignedUrl(cid);
+              // Never fall back to a bare CID for `url`: fetching "<cid>"
+              // resolves relative to the renderer origin (e.g.
+              // http://localhost:5173/<cid>), so the dev server returns
+              // index.html and weight parsing fails with "Unexpected token '<'".
+              // Use a full public gateway URL as the fallback instead.
+              const gatewayUrl = `https://gateway.pinata.cloud/ipfs/${cid}`;
+              foundWeights.push({
+                url: presignedUrl ?? gatewayUrl,
+                cid,
+                trainerAddress,
+              });
             }
-            seenCids.add(cid);
-
-            const presignedUrl = await generatePresignedUrl(cid);
-            const entryUrl = presignedUrl ?? cid;
-
-            if (presignedUrl) {
-              console.log(`Presigned URL: ${presignedUrl}`);
-            }
-
-            foundWeights.push({ url: entryUrl, cid, trainerAddress });
           }
+        } catch {
+          // Not a WeightsSubmitted log — try next event type below.
         }
-      } catch (err) {
-        console.log('Error decoding event: ', err);
-        // This will catch errors from decodeEvent if the log is for a different event type.
-        // We can safely ignore these and continue searching.
+
+        // ── TaskCreated — signals we've passed all events for this task ────
+        try {
+          const event = decodeEvent('TaskCreated', log);
+          if ((event.taskId as string).toString() === taskId) {
+            console.log(
+              `TaskCreated found for task ${taskId} — stopping pagination.`
+            );
+            taskCreatedSeen = true;
+          }
+        } catch {
+          // Not a TaskCreated log.
+        }
       }
+
+      // Early exit: we've gone back far enough in time.
+      if (taskCreatedSeen) break;
+
+      nextUrl = links?.next ? `${MIRROR}${links.next}` : null;
     }
 
-    console.log(`Found ${foundWeights.length} weights for task ${taskId}.`);
+    console.log(`Found ${foundWeights.length} weight(s) for task ${taskId}.`);
     return foundWeights;
   } catch (err) {
     console.error('Error fetching event logs:', err);

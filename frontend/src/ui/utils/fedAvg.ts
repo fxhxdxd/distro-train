@@ -213,9 +213,22 @@ export function serializeWeightsToString(weights: ModelWeights): string {
  */
 export async function fetchWeightFileContent(url: string): Promise<string> {
   const response = await axios.get<string>(url, { responseType: 'text' });
-  return typeof response.data === 'string'
-    ? response.data
-    : JSON.stringify(response.data);
+  const data =
+    typeof response.data === 'string'
+      ? response.data
+      : JSON.stringify(response.data);
+
+  // Guard against a misresolved URL (e.g. a bare CID fetched relative to the
+  // dev server) returning the app's own index.html — which otherwise fails
+  // downstream with a cryptic "Unexpected token '<'". Fail fast and clearly.
+  const contentType = String(response.headers?.['content-type'] ?? '');
+  if (contentType.includes('text/html') || data.trimStart().startsWith('<')) {
+    throw new Error(
+      `Weight file fetch returned HTML, not weights — likely a bad/relative ` +
+        `URL or an unreachable gateway. URL: ${url}`
+    );
+  }
+  return data;
 }
 
 /**

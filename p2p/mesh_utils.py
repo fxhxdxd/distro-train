@@ -29,11 +29,16 @@ class Mesh:
     def get_channel_nodes(self, channel: str):
         for topic, peers in self.bootstrap_mesh.items():
             if topic == channel:
-                peers_id = [
-                    peer["peer_id"]
-                    for peer in peers
-                    if peer["role"] == "trainer".upper()
-                ]
+                # Normalise to str and de-duplicate while preserving order. A
+                # peer can announce itself more than once; duplicate ids would
+                # skew the round-robin chunk split, and the assign-side match
+                # compares against str(host.get_id()).
+                peers_id: list = []
+                for peer in peers:
+                    if peer["role"] == "trainer".upper():
+                        pid = str(peer["peer_id"]).strip()
+                        if pid and pid not in peers_id:
+                            peers_id.append(pid)
                 return peers_id
         return []
 
