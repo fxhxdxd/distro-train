@@ -99,17 +99,6 @@ export const TrainingStepper = () => {
                         ? 'Current step'
                         : 'Pending'}
                   </span>
-                  <div className='mt-4 h-1.5 overflow-hidden rounded-full bg-white/10'>
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        isActive
-                          ? 'w-full bg-gradient-to-r from-primary-light to-primary'
-                          : isCurrent
-                            ? 'w-1/2 bg-primary-light'
-                            : 'w-0 bg-transparent'
-                      }`}
-                    />
-                  </div>
                 </div>
               </div>
             </React.Fragment>

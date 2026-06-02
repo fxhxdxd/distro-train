@@ -159,7 +159,7 @@ const NewTrainingPage = () => {
                 className='mt-4 inline-flex items-center gap-2 rounded-xl border border-primary/25 bg-primary/10 px-3 py-2 text-sm font-medium text-primary-light transition-colors hover:bg-primary/15 hover:text-white'
               >
                 <Sparkles className='h-4 w-4' />
-                How this dashboard works
+                How this works
               </button>
             </div>
           </div>
