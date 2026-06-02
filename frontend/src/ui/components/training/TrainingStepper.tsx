@@ -28,7 +28,7 @@ export const TrainingStepper = () => {
   const currentPhaseNumber = getPhaseStep(currentPhase);
 
   return (
-    <div className='mb-8'>
+    <div className='mb-8 glass-panel rounded-xl p-5'>
       <div className='flex items-start'>
         {steps.map((step, index) => {
           const stepNumber = index + 1;
@@ -41,10 +41,10 @@ export const TrainingStepper = () => {
                 <div
                   className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 border ${
                     isActive
-                      ? 'bg-primary text-background border-primary'
+                      ? 'bg-gradient-to-br from-primary-light to-primary text-white border-primary shadow-lg shadow-primary/20'
                       : isCurrent
-                      ? 'bg-primary/50 text-background border-primary animate-pulse'
-                      : 'bg-surface border-border text-text-secondary'
+                      ? 'bg-primary/30 text-white border-primary animate-pulse shadow-lg shadow-primary/10'
+                      : 'bg-white/5 border-white/10 text-text-secondary'
                   }`}
                 >
                   <step.icon className='w-5 h-5' />
@@ -64,7 +64,7 @@ export const TrainingStepper = () => {
                 <div className='flex-1 flex items-center h-10'>
                   <div
                     className={`w-full h-px transition-colors duration-500 ${
-                      isActive ? 'bg-primary' : 'bg-border'
+                      isActive ? 'bg-primary' : 'bg-white/10'
                     }`}
                   />
                 </div>

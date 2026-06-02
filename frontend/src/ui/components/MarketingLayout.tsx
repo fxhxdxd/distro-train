@@ -32,7 +32,7 @@ const MarketingLayout = () => {
                         <div className="w-14 h-14 flex items-center justify-center relative group-hover:scale-105 transition-transform duration-300">
                             <img src={logo} alt="DecentraAI Logo" className="w-full h-full object-contain" />
                         </div>
-                        <span className="text-3xl font-bold tracking-tight bg-background/50 backdrop-blur-md pr-3 pl-1 py-1 rounded-lg">Decentra<span className="text-primary-light">AI</span></span>
+                        <span className="text-3xl font-bold bg-background/50 backdrop-blur-md pr-3 pl-1 py-1 rounded-lg">Decentra<span className="text-primary-light">AI</span></span>
                     </Link>
 
                     {/* Centered Glass Pill Nav - Anchor links for scrolling */}
@@ -67,7 +67,7 @@ const MarketingLayout = () => {
                             <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden">
                                 <img src={logo} alt="DecentraAI Logo" className="w-full h-full object-contain" />
                             </div>
-                            <span className="text-2xl font-bold tracking-tight pl-1">Decentra<span className="text-primary-light">AI</span></span>
+                            <span className="text-2xl font-bold pl-1">Decentra<span className="text-primary-light">AI</span></span>
                         </Link>
                         <p className="text-text-secondary text-sm max-w-xs text-center md:text-left">
                             Empowering the future of distributed AI training with decentralized, trustless networks.

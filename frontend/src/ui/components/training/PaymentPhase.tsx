@@ -45,7 +45,7 @@ export const PaymentPhase = () => {
   const breakdown = calculateBreakdown(tokenAmount);
 
   return (
-    <div className='bg-surface rounded-xl border border-border overflow-hidden'>
+    <div className='glass-panel rounded-xl overflow-hidden'>
       {isLoading ? (
         /* Loading State */
         <div className='p-8'>
@@ -113,7 +113,7 @@ export const PaymentPhase = () => {
         /* Payment Form */
         <>
           {/* Header */}
-          <div className='p-6 border-b border-border bg-background/40'>
+          <div className='p-6 border-b border-white/10 bg-primary/5'>
             <div className='flex items-center gap-4'>
               <div className='w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center border border-primary/30'>
                 <CreditCard className='w-6 h-6 text-primary' />
@@ -147,7 +147,7 @@ export const PaymentPhase = () => {
                       step='0.1'
                       min='0.1'
                       placeholder='e.g., 0.5'
-                      className='w-full bg-background border-2 border-border text-text-primary rounded-lg p-4 text-lg font-medium
+                      className='w-full bg-white/5 border-2 border-white/10 text-text-primary rounded-lg p-4 text-lg font-medium
                                focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary
                                transition-all duration-200'
                       value={tokenAmount}
@@ -193,7 +193,7 @@ export const PaymentPhase = () => {
               </div>
 
               {/* Cost Breakdown */}
-              <div className='bg-background border border-border rounded-lg p-5'>
+              <div className='bg-white/5 border border-white/10 rounded-lg p-5'>
                 <h4 className='text-lg font-semibold text-text-primary mb-4 flex items-center gap-2'>
                   <Shield className='w-5 h-5 text-primary' />
                   Payment Breakdown
@@ -272,8 +272,8 @@ export const PaymentPhase = () => {
             <button
               onClick={handlePayment}
               disabled={!tokenAmount || parseFloat(tokenAmount) < 0.1}
-              className='w-full group relative bg-primary text-background font-bold text-lg py-4 px-6 rounded-xl 
-                       hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed
+              className='w-full group relative bg-gradient-to-r from-primary-light to-primary text-white font-bold text-lg py-4 px-6 rounded-xl
+                       hover:shadow-[0_0_24px_rgba(217,70,239,0.24)] disabled:opacity-50 disabled:cursor-not-allowed
                        focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-surface
                        transition-all duration-200 overflow-hidden'
             >

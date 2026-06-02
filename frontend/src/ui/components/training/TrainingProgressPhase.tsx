@@ -6,7 +6,7 @@ import { Rocket, History } from 'lucide-react';
 export const TrainingProgressPhase = () => {
   const { trainerCount } = useTraining();
   return (
-    <div className='bg-surface p-8 rounded-xl border border-border'>
+    <div className='glass-panel p-8 rounded-xl'>
       <div className='text-center flex flex-col items-center'>
         <div className='w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-primary/30'>
           <Rocket className='w-8 h-8 text-primary' />
@@ -28,7 +28,7 @@ export const TrainingProgressPhase = () => {
         </p>
         <Link
           to='/history'
-          className='flex items-center justify-center gap-2 bg-primary text-background font-semibold py-3 px-6 rounded-lg hover:bg-primary/90 transition-all'
+          className='flex items-center justify-center gap-2 bg-gradient-to-r from-primary-light to-primary text-white font-semibold py-3 px-6 rounded-lg hover:shadow-[0_0_24px_rgba(217,70,239,0.24)] transition-all'
         >
           <History className='w-5 h-5' />
           Go to Training History

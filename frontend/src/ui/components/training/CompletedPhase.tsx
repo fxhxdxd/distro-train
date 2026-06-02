@@ -20,7 +20,7 @@ export const CompletedPhase = () => {
   };
 
   return (
-    <div className='bg-surface p-8 rounded-xl border border-border'>
+    <div className='glass-panel p-8 rounded-xl'>
       <div className='flex items-center gap-3 mb-6'>
         <CheckCircle2 className='w-6 h-6 text-green-500' />
         <h2 className='text-xl font-semibold text-text-primary'>
@@ -28,7 +28,7 @@ export const CompletedPhase = () => {
         </h2>
       </div>
       <div className='space-y-4'>
-        <div className='bg-background border border-border rounded-lg p-4'>
+        <div className='bg-white/5 border border-white/10 rounded-lg p-4'>
           <div className='flex items-center justify-between mb-2'>
             <span className='text-sm font-medium text-text-secondary'>
               Model Weights Hash
@@ -44,7 +44,7 @@ export const CompletedPhase = () => {
             {result?.weightsHash || 'N/A'}
           </code>
         </div>
-        <div className='bg-background border border-border rounded-lg p-4'>
+        <div className='bg-white/5 border border-white/10 rounded-lg p-4'>
           <div className='flex items-center justify-between mb-2'>
             <span className='text-sm font-medium text-text-secondary'>
               Hedera Transaction ID
@@ -62,7 +62,7 @@ export const CompletedPhase = () => {
         </div>
         <button
           onClick={resetTraining}
-          className='w-full flex items-center justify-center bg-primary text-background font-semibold py-3 px-4 rounded-lg hover:bg-primary/90'
+          className='w-full flex items-center justify-center bg-gradient-to-r from-primary-light to-primary text-white font-semibold py-3 px-4 rounded-lg hover:shadow-[0_0_24px_rgba(217,70,239,0.24)]'
         >
           <RotateCcw className='mr-2 h-5 w-5' />
           Start Another Training
