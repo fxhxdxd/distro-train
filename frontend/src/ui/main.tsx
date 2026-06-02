@@ -6,7 +6,7 @@ import { HashRouter } from 'react-router-dom';
 import { SettingsProvider } from './contexts/SettingsContext.tsx';
 import { TrainingProvider } from './contexts/TrainingContext.tsx';
 import { WalletConnectProvider } from './contexts/WalletConnectContext.tsx';
-import { WalletConnectClient } from './services/walletConnectClient.ts'; 
+import { WalletConnectClient } from './services/walletConnectClient.ts';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -14,11 +14,11 @@ createRoot(document.getElementById('root')!).render(
       <TrainingProvider>
         <WalletConnectProvider>
           <WalletConnectClient />
-            <HashRouter> 
-              <App />
-            </HashRouter>
-          </WalletConnectProvider>
-        </TrainingProvider>
+          <HashRouter>
+            <App />
+          </HashRouter>
+        </WalletConnectProvider>
+      </TrainingProvider>
     </SettingsProvider>
   </StrictMode>
 );
