@@ -74,7 +74,7 @@ export const HistoryTable = ({
   onDelete,
 }: HistoryTableProps) => {
   return (
-    <div className='bg-surface rounded-xl border border-border overflow-hidden'>
+    <div className='glass-panel rounded-xl overflow-hidden'>
       {history.length === 0 ? (
         <div className='text-center py-16'>
           <div className='w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4'>
@@ -90,7 +90,7 @@ export const HistoryTable = ({
         </div>
       ) : (
         <>
-          <div className='bg-background/50 border-b border-border px-6 py-4'>
+          <div className='bg-primary/5 border-b border-white/10 px-6 py-4'>
             <h3 className='text-lg font-semibold text-text-primary flex items-center gap-2'>
               <FileText className='w-5 h-5 text-primary' />
               Training History ({history.length})
@@ -99,7 +99,7 @@ export const HistoryTable = ({
 
           <div className='hidden md:block overflow-x-auto'>
             <table className='min-w-full'>
-              <thead className='bg-background/30'>
+              <thead className='bg-white/5'>
                 <tr>
                   <th className='px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider'>
                     Project Details
@@ -123,7 +123,7 @@ export const HistoryTable = ({
                   return (
                     <tr
                       key={training.id}
-                      className='hover:bg-background/50 transition-all duration-200 group'
+                      className='hover:bg-primary/5 transition-all duration-200 group'
                     >
                       <td className='px-6 py-4'>
                         <div>
@@ -202,7 +202,7 @@ export const HistoryTable = ({
               return (
                 <div
                   key={training.id}
-                  className='p-6 hover:bg-background/50 transition-colors'
+                  className='p-6 hover:bg-primary/5 transition-colors'
                 >
                   <div className='flex items-start justify-between mb-4'>
                     <div>
