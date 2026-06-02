@@ -81,10 +81,10 @@ const SettingsPage = () => {
 
   return (
     <div className='min-h-full'>
-      <div className='pb-6 mb-6 border-b border-border'>
+      <div className='glass-panel rounded-xl p-5 mb-6'>
         <div className='flex items-center gap-3'>
-          <div className='w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center border border-primary/20'>
-            <Settings className='w-5 h-5 text-primary' />
+          <div className='w-10 h-10 bg-gradient-to-br from-primary-light/30 to-primary/20 rounded-lg flex items-center justify-center border border-primary/30'>
+            <Settings className='w-5 h-5 text-primary-light' />
           </div>
           <div>
             <h1 className='text-2xl font-bold text-text-primary'>Settings</h1>
@@ -111,8 +111,8 @@ const SettingsPage = () => {
           </div>
         </div>
 
-        <div className='bg-surface rounded-xl border border-border overflow-hidden'>
-          <div className='p-6 border-b border-border'>
+        <div className='glass-panel rounded-xl overflow-hidden'>
+          <div className='p-6 border-b border-white/10 bg-primary/5'>
             <h2 className='text-lg font-semibold text-text-primary'>
               Pinata Credentials
             </h2>
@@ -135,7 +135,7 @@ const SettingsPage = () => {
                     name='pinataApiKey'
                     value={localSettings.pinataApiKey}
                     onChange={handleChange}
-                    className={`w-full bg-background border ${
+                    className={`w-full bg-white/5 border ${
                       errors.pinataApiKey ? 'border-red-500' : 'border-border'
                     } text-text-primary rounded-lg p-3 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors`}
                     placeholder='Enter your Pinata API Key'
@@ -172,7 +172,7 @@ const SettingsPage = () => {
                     name='pinataSecretKey'
                     value={localSettings.pinataSecretKey}
                     onChange={handleChange}
-                    className={`w-full bg-background border ${
+                    className={`w-full bg-white/5 border ${
                       errors.pinataSecretKey
                         ? 'border-red-500'
                         : 'border-border'
@@ -206,7 +206,7 @@ const SettingsPage = () => {
                 className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all ${
                   isLoading
                     ? 'bg-primary/20 text-text-secondary cursor-not-allowed'
-                    : 'bg-primary text-background hover:bg-primary/90 active:scale-[0.98]'
+                    : 'bg-gradient-to-r from-primary-light to-primary text-white hover:shadow-[0_0_24px_rgba(217,70,239,0.24)] active:scale-[0.98]'
                 }`}
               >
                 {isLoading ? (
@@ -225,7 +225,7 @@ const SettingsPage = () => {
           </form>
         </div>
 
-        <div className='mt-6 p-4 bg-surface rounded-lg border border-border'>
+        <div className='mt-6 p-4 glass-panel rounded-lg'>
           <h3 className='font-medium text-text-primary mb-2'>
             Need help getting your credentials?
           </h3>
