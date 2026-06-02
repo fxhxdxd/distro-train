@@ -28,8 +28,7 @@ export const TrainingStepper = () => {
   const currentPhaseNumber = getPhaseStep(currentPhase);
 
   return (
-    <div className='relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.025] px-5 py-6'>
-      <div className='pointer-events-none absolute inset-x-8 top-1/2 hidden h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent md:block' />
+    <div className='relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.025] p-4'>
       <div className='relative grid gap-4 md:grid-cols-4'>
         {steps.map((step, index) => {
           const stepNumber = index + 1;
@@ -39,44 +38,42 @@ export const TrainingStepper = () => {
           return (
             <React.Fragment key={index}>
               <div
-                className='group relative flex items-center gap-4 md:flex-col md:items-center md:text-center'
+                className={`group relative overflow-hidden rounded-2xl border p-4 transition-all duration-300 ${
+                  isActive
+                    ? 'border-primary/35 bg-gradient-to-br from-primary/16 to-primary-light/8 shadow-[0_18px_42px_rgba(168,85,247,0.12)]'
+                    : isCurrent
+                      ? 'border-primary/60 bg-gradient-to-br from-primary/25 via-primary-light/10 to-white/[0.035] shadow-[0_0_34px_rgba(217,70,239,0.18)]'
+                      : 'border-white/10 bg-[#0d0618]/80 hover:border-primary/25 hover:bg-white/[0.04]'
+                }`}
               >
                 {index < steps.length - 1 && (
                   <div
-                    className={`absolute left-[calc(50%+2.25rem)] right-[calc(-50%+2.25rem)] top-6 hidden h-[2px] rounded-full md:block ${
+                    className={`absolute left-[calc(100%+0.25rem)] top-1/2 hidden h-[2px] w-4 rounded-full md:block ${
                       isActive
                         ? 'bg-gradient-to-r from-primary-light to-primary'
                         : 'bg-white/10'
                     }`}
                   />
                 )}
-                <div
-                  className={`relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border transition-all duration-300 md:mb-3 ${
-                    isActive
-                      ? 'border-primary bg-gradient-to-br from-primary-light to-primary text-white shadow-[0_0_32px_rgba(168,85,247,0.3)]'
-                      : isCurrent
-                        ? 'border-primary/70 bg-primary/25 text-white shadow-[0_0_30px_rgba(217,70,239,0.18)]'
-                        : 'border-white/10 bg-[#0d0618] text-text-secondary group-hover:border-primary/30 group-hover:text-primary-light'
-                  }`}
-                >
-                  {isActive ? (
-                    <Check className='h-5 w-5' />
-                  ) : (
-                    <step.icon className='h-5 w-5' />
-                  )}
-                </div>
-                <div className='min-w-0 md:w-full'>
-                  <span
-                    className={`block text-sm font-semibold ${
-                    isActive || isCurrent
-                      ? 'text-text-primary'
-                      : 'text-text-secondary'
+                <div className='pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent' />
+                <div className='relative flex items-start justify-between gap-3'>
+                  <div
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border transition-all duration-300 ${
+                      isActive
+                        ? 'border-primary bg-gradient-to-br from-primary-light to-primary text-white shadow-[0_0_32px_rgba(168,85,247,0.3)]'
+                        : isCurrent
+                          ? 'border-primary/70 bg-primary/25 text-white shadow-[0_0_30px_rgba(217,70,239,0.18)]'
+                          : 'border-white/10 bg-white/5 text-text-secondary group-hover:border-primary/30 group-hover:text-primary-light'
                     }`}
                   >
-                    {step.label}
-                  </span>
+                    {isActive ? (
+                      <Check className='h-5 w-5' />
+                    ) : (
+                      <step.icon className='h-5 w-5' />
+                    )}
+                  </div>
                   <span
-                    className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                    className={`rounded-full px-2.5 py-1 text-xs font-bold ${
                       isActive || isCurrent
                         ? 'bg-primary/15 text-primary-light'
                         : 'bg-white/5 text-text-secondary'
@@ -84,15 +81,35 @@ export const TrainingStepper = () => {
                   >
                     0{stepNumber}
                   </span>
-                  <div
-                    className={`mx-auto mt-3 hidden h-1 w-10 rounded-full md:block ${
-                      isCurrent
-                        ? 'bg-primary-light'
-                        : isActive
-                          ? 'bg-primary/60'
-                          : 'bg-transparent'
+                </div>
+                <div className='relative mt-5'>
+                  <span
+                    className={`block text-base font-semibold ${
+                      isActive || isCurrent
+                        ? 'text-text-primary'
+                        : 'text-text-secondary'
                     }`}
-                  />
+                  >
+                    {step.label}
+                  </span>
+                  <span className='mt-1 block text-xs text-text-secondary'>
+                    {isActive
+                      ? 'Completed'
+                      : isCurrent
+                        ? 'Current step'
+                        : 'Pending'}
+                  </span>
+                  <div className='mt-4 h-1.5 overflow-hidden rounded-full bg-white/10'>
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        isActive
+                          ? 'w-full bg-gradient-to-r from-primary-light to-primary'
+                          : isCurrent
+                            ? 'w-1/2 bg-primary-light'
+                            : 'w-0 bg-transparent'
+                      }`}
+                    />
+                  </div>
                 </div>
               </div>
             </React.Fragment>
