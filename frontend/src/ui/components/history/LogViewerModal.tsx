@@ -101,7 +101,7 @@ export const LogViewerModal = ({
               leaveFrom='opacity-100'
               leaveTo='opacity-0 scale-95'
             >
-              <Dialog.Panel className='w-full max-w-3xl transform overflow-hidden rounded-2xl bg-surface border border-border p-6 text-left align-middle shadow-xl transition-all'>
+              <Dialog.Panel className='w-full max-w-3xl transform overflow-hidden rounded-2xl glass-panel p-6 text-left align-middle shadow-xl transition-all'>
                 <Dialog.Title
                   as='h3'
                   className='text-xl font-bold leading-6 text-text-primary flex items-center gap-2'
@@ -119,7 +119,7 @@ export const LogViewerModal = ({
                 <div className='mt-4'>
                   <div
                     ref={logContainerRef}
-                    className='h-96 bg-background p-3 rounded-lg border border-border font-mono text-xs overflow-y-auto no-scrollbar'
+                    className='h-96 bg-white/5 p-3 rounded-lg border border-white/10 font-mono text-xs overflow-y-auto no-scrollbar'
                   >
                     {isLoading && (
                       <div className='flex items-center justify-center h-full'>

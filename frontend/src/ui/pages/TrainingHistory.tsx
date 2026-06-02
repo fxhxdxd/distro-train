@@ -137,10 +137,10 @@ const TrainingHistoryPage = () => {
 
   return (
     <div>
-      <div className='pb-6 mb-6 border-b border-border'>
+      <div className='glass-panel rounded-xl p-5 mb-6'>
         <div className='flex items-center gap-3'>
-          <div className='w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center border border-primary/20'>
-            <History className='w-5 h-5 text-primary' />
+          <div className='w-10 h-10 bg-gradient-to-br from-primary-light/30 to-primary/20 rounded-lg flex items-center justify-center border border-primary/30'>
+            <History className='w-5 h-5 text-primary-light' />
           </div>
           <div>
             <h1 className='text-2xl font-bold text-text-primary'>

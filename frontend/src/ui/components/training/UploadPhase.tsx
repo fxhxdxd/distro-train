@@ -28,7 +28,7 @@ export const UploadPhase = () => {
   };
 
   return (
-    <div className='bg-surface p-8 rounded-xl border border-border'>
+    <div className='glass-panel p-8 rounded-xl'>
       <div className='flex items-center gap-3 mb-6'>
         <Database className='w-6 h-6 text-primary' />
         <h2 className='text-xl font-semibold text-text-primary'>
@@ -47,7 +47,7 @@ export const UploadPhase = () => {
             type='text'
             id='projectName'
             placeholder='e.g., Advanced Image Classification'
-            className='w-full bg-background border border-border text-text-primary rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary/50'
+            className='w-full bg-white/5 border border-white/10 text-text-primary rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary'
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
           />
@@ -83,7 +83,7 @@ export const UploadPhase = () => {
         <button
           type='submit'
           disabled={isLoading || !datasetFile || !modelFile || !projectName}
-          className='w-full flex items-center justify-center bg-primary text-background font-semibold py-3 px-4 rounded-lg hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
+          className='w-full flex items-center justify-center bg-gradient-to-r from-primary-light to-primary text-white font-semibold py-3 px-4 rounded-lg hover:shadow-[0_0_24px_rgba(217,70,239,0.24)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
         >
           <Upload className='mr-2 h-5 w-5' />
           {isLoading ? 'Uploading...' : 'Upload Assets & Proceed to Payment'}
