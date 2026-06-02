@@ -1,4 +1,4 @@
-import { Github, Twitter, MessageSquare } from 'lucide-react';
+import { Github } from 'lucide-react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import TitleBar from './TitleBar';
@@ -6,6 +6,7 @@ import logo from '../assets/logo.png';
 
 const MarketingLayout = () => {
     const navigate = useNavigate();
+    const githubUrl = 'https://github.com/fxhxdxd/distro-train';
 
     // Enable smooth scrolling on the document level when in this layout
     useEffect(() => {
@@ -39,6 +40,7 @@ const MarketingLayout = () => {
                     <nav className="hidden lg:flex items-center gap-8 glass-pill px-8 py-3 rounded-full relative z-50 text-sm font-medium text-text-secondary bg-surface/80 backdrop-blur-xl border border-white/5 shadow-2xl">
                         <a href="#features" className="hover:text-white transition-colors">Features</a>
                         <a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a>
+                        <a href="#security" className="hover:text-white transition-colors">Security</a>
                         <Link to="/training" className="text-white hover:text-primary-light transition-colors">Training Dashboard</Link>
                     </nav>
 
@@ -75,14 +77,14 @@ const MarketingLayout = () => {
                     </div>
 
                     <div className="flex gap-6 text-text-secondary">
-                        <a href="#" className="hover:text-white transition-colors">
-                            <Twitter className="w-5 h-5" />
-                        </a>
-                        <a href="#" className="hover:text-white transition-colors">
+                        <a
+                            href={githubUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="distro-train on GitHub"
+                            className="hover:text-white transition-colors"
+                        >
                             <Github className="w-5 h-5" />
-                        </a>
-                        <a href="#" className="hover:text-white transition-colors">
-                            <MessageSquare className="w-5 h-5" />
                         </a>
                     </div>
                 </div>

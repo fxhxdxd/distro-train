@@ -8,6 +8,14 @@ import {
   Cpu,
   GitMerge,
   Download,
+  KeyRound,
+  Scissors,
+  Filter,
+  Grid3X3,
+  Star,
+  LockKeyhole,
+  FileCheck2,
+  Coins,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, type Variants } from 'framer-motion';
@@ -98,6 +106,76 @@ const Homepage = () => {
       title: 'Deliver',
       description: 'Final trained weights are returned end-to-end on-chain.',
       number: '5',
+    },
+  ];
+
+  const securityStages = [
+    {
+      icon: KeyRound,
+      number: '01',
+      title: 'Cryptographic Admission',
+      description:
+        'Peer updates are admitted through signature checks, replay protection, and Sybil-resistance controls before they can influence a round.',
+      defends: 'Identity forgery, replay attacks, Sybil flooding',
+    },
+    {
+      icon: Scissors,
+      number: '02',
+      title: 'L2-Norm Clipping',
+      description:
+        'Gradient magnitude is clipped so a single malicious trainer cannot push the global model with an unbounded update.',
+      defends: 'Unbounded poisoning and coordinate manipulation',
+    },
+    {
+      icon: Filter,
+      number: '03',
+      title: 'Adaptive Cosine Filter',
+      description:
+        'Each update is compared by direction, using adaptive thresholds that tolerate non-IID data while filtering obvious outliers.',
+      defends: 'Sign flips, random noise, optimal poisoning',
+    },
+    {
+      icon: Grid3X3,
+      number: '04',
+      title: 'P2P Bucketing',
+      description:
+        'Filtered updates are grouped into randomized buckets, reducing the effective Byzantine fraction before robust aggregation.',
+      defends: 'Distributed backdoors and colluding attackers',
+    },
+    {
+      icon: Star,
+      number: '05',
+      title: 'EMA Trust Mixing',
+      description:
+        'Trainer reputation evolves over rounds with exponential moving averages, excluding cold or low-trust peers from aggregation.',
+      defends: 'Persistent attackers and post-admission Sybils',
+    },
+  ];
+
+  const securityLayers = [
+    {
+      icon: LockKeyhole,
+      title: 'Encrypted Result URLs',
+      description:
+        'Trainer weight URLs are encrypted with the ML user RSA-OAEP public key before submission.',
+    },
+    {
+      icon: Coins,
+      title: 'Escrowed Payments',
+      description:
+        'Hedera smart contracts hold the training budget and release rewards when weights are submitted.',
+    },
+    {
+      icon: FileCheck2,
+      title: 'Immutable Audit Trail',
+      description:
+        'Hedera Consensus Service logs progress, failures, and task events for tamper-evident coordination.',
+    },
+    {
+      icon: Database,
+      title: 'Content Addressing',
+      description:
+        'Large datasets and weights move through IPFS or Akave URLs, not raw P2P payloads.',
     },
   ];
 
@@ -211,7 +289,7 @@ const Homepage = () => {
 
       <section
         id='how-it-works'
-        className='py-32 px-8 mb-24 relative z-10 overflow-hidden'
+        className='py-32 px-8 relative z-10 overflow-hidden'
       >
         <div className='absolute top-1/2 right-0 w-[600px] h-[600px] bg-primary-light/10 rounded-full blur-[150px] -translate-y-1/2 translate-x-1/3 pointer-events-none' />
 
@@ -244,6 +322,100 @@ const Homepage = () => {
                 </p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section id='security' className='px-8 pb-32 relative z-10 overflow-hidden'>
+        <div className='max-w-6xl mx-auto w-full'>
+          <div className='text-center mb-16'>
+            <div className='inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-sm font-medium text-primary-light mb-5'>
+              <Shield className='w-4 h-4' />
+              TrustGossip Security Architecture
+            </div>
+            <h2 className='text-4xl md:text-5xl font-bold text-text-primary mb-6'>
+              Security-First by Design
+            </h2>
+            <p className='text-xl text-text-secondary max-w-3xl mx-auto'>
+              Distro-train protects the full path from peer admission to
+              aggregation, storage, payment, and auditability without relying on
+              a trusted central aggregator.
+            </p>
+          </div>
+
+          <div className='grid lg:grid-cols-[0.95fr_1.05fr] gap-8 items-start'>
+            <div className='glass-panel rounded-2xl p-8'>
+              <div className='flex items-center gap-4 mb-8'>
+                <div className='w-14 h-14 rounded-2xl border border-primary/30 bg-primary/15 flex items-center justify-center'>
+                  <Shield className='w-7 h-7 text-primary-light' />
+                </div>
+                <div>
+                  <h3 className='text-2xl font-bold text-text-primary'>
+                    End-to-End Protection
+                  </h3>
+                  <p className='text-text-secondary mt-1'>
+                    Four platform layers reinforce the ML defense pipeline.
+                  </p>
+                </div>
+              </div>
+
+              <div className='grid gap-4'>
+                {securityLayers.map((layer) => (
+                  <div
+                    key={layer.title}
+                    className='rounded-2xl border border-white/10 bg-white/[0.035] p-5 flex gap-4'
+                  >
+                    <div className='w-11 h-11 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center shrink-0'>
+                      <layer.icon className='w-5 h-5 text-primary-light' />
+                    </div>
+                    <div>
+                      <h4 className='font-semibold text-text-primary'>
+                        {layer.title}
+                      </h4>
+                      <p className='text-sm text-text-secondary leading-relaxed mt-1'>
+                        {layer.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+
+            <div className='space-y-4'>
+              {securityStages.map((stage, index) => (
+                <motion.div
+                  key={stage.title}
+                  initial={{ opacity: 0, x: 16 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.45, delay: index * 0.08 }}
+                  className='glass-panel rounded-2xl p-5 group hover:border-primary/25 transition-colors'
+                >
+                  <div className='flex gap-5'>
+                    <div className='flex flex-col items-center gap-2 shrink-0'>
+                      <div className='w-12 h-12 rounded-2xl bg-primary/15 border border-primary/25 flex items-center justify-center group-hover:bg-primary/20 transition-colors'>
+                        <stage.icon className='w-6 h-6 text-primary-light' />
+                      </div>
+                      <span className='text-xs font-bold text-primary-light bg-primary/10 rounded-full px-2 py-1'>
+                        {stage.number}
+                      </span>
+                    </div>
+                    <div className='min-w-0'>
+                      <h4 className='text-xl font-bold text-text-primary mb-2'>
+                        {stage.title}
+                      </h4>
+                      <p className='text-text-secondary leading-relaxed'>
+                        {stage.description}
+                      </p>
+                      <p className='mt-3 text-xs font-medium text-primary-light'>
+                        Defends against: {stage.defends}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
