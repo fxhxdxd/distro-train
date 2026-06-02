@@ -19,7 +19,7 @@ export default function DemoVideo() {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <p className="text-xs font-mono tracking-widest text-indigo-400 uppercase mb-3">
+          <p className="text-xs font-mono tracking-widest text-fuchsia-400 uppercase mb-3">
             Live demo
           </p>
           <h2 className="text-3xl md:text-4xl font-semibold text-zinc-100 mb-4">

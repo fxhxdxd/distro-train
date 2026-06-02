@@ -72,14 +72,14 @@ export const AssemblingPhase = () => {
   };
 
   return (
-    <div className='bg-surface p-8 rounded-xl border border-border'>
-      <div className='flex items-center justify-between mb-6'>
+    <div className='dashboard-panel overflow-hidden rounded-3xl'>
+      <div className='flex items-center justify-between border-b border-white/10 bg-primary/5 p-6'>
         <div className='flex items-center gap-3'>
-          <div className='w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center border border-primary/30'>
-            <Users className='w-6 h-6 text-primary' />
+          <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/30 bg-primary/15'>
+            <Users className='h-6 w-6 text-primary-light' />
           </div>
           <div>
-            <h2 className='text-xl font-semibold text-text-primary'>
+            <h2 className='text-2xl font-bold text-text-primary'>
               Trainer Nodes Assembling
             </h2>
             <div className='flex items-center gap-2 mt-1'>
@@ -102,7 +102,7 @@ export const AssemblingPhase = () => {
         </div>
       </div>
 
-      <div className='flex items-center justify-between p-4 bg-primary/10 border border-primary/20 rounded-lg mb-6'>
+      <div className='m-6 flex items-center justify-between rounded-2xl border border-primary/20 bg-primary/10 p-4'>
         <div className='flex items-center gap-2'>
           <Network className='w-5 h-5 text-primary animate-pulse' />
           <span className='text-text-primary'>
@@ -117,6 +117,7 @@ export const AssemblingPhase = () => {
         </div>
       </div>
       {/* Trainer Nodes Grid */}
+      <div className='px-6 pb-6'>
       {trainerNodes && trainerNodes.length > 0 && (
         <div className='mb-6'>
           <div className='flex items-center gap-2 mb-4'>
@@ -138,7 +139,7 @@ export const AssemblingPhase = () => {
               return (
                 <div
                   key={node.peer_id}
-                  className='bg-background border border-border rounded-lg p-4 hover:border-primary/30 transition-colors'
+                  className='rounded-2xl border border-white/10 bg-white/[0.035] p-4 transition-colors hover:border-primary/40'
                 >
                   {/* Node Header */}
                   <div className='flex items-center justify-between mb-3'>
@@ -217,23 +218,23 @@ export const AssemblingPhase = () => {
 
           {/* Network Stats Summary */}
           <div className='mt-4 grid grid-cols-2 md:grid-cols-4 gap-4'>
-            <div className='bg-primary/5 border border-primary/20 rounded-lg p-3 text-center'>
+            <div className='rounded-2xl border border-primary/20 bg-primary/5 p-3 text-center'>
               <div className='text-lg font-bold text-primary'>
                 {trainerNodes.length}
               </div>
               <div className='text-xs text-text-secondary'>Total Nodes</div>
             </div>
-            <div className='bg-green-500/5 border border-green-500/20 rounded-lg p-3 text-center'>
+            <div className='rounded-2xl border border-green-500/20 bg-green-500/5 p-3 text-center'>
               <div className='text-lg font-bold text-green-400'>
                 {trainerCount}
               </div>
               <div className='text-xs text-text-secondary'>Ready</div>
             </div>
-            <div className='bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-3 text-center'>
+            <div className='rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-3 text-center'>
               <div className='text-lg font-bold text-yellow-400'>{0}</div>
               <div className='text-xs text-text-secondary'>Joining</div>
             </div>
-            <div className='bg-blue-500/5 border border-blue-500/20 rounded-lg p-3 text-center'>
+            <div className='rounded-2xl border border-blue-500/20 bg-blue-500/5 p-3 text-center'>
               <div className='text-lg font-bold text-blue-400'>
                 {200 + (trainerNodes.length * 7 % 100)}ms
               </div>
@@ -254,7 +255,7 @@ export const AssemblingPhase = () => {
           <button
             onClick={beginFinalTraining}
             disabled={isLoading}
-            className='w-full flex items-center justify-center bg-primary text-background font-semibold py-4 px-4 rounded-lg hover:bg-primary/90 disabled:opacity-50'
+            className='flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-primary-light to-primary px-4 py-4 font-semibold text-white hover:shadow-[0_0_24px_rgba(217,70,239,0.24)] disabled:opacity-50'
           >
             {isLoading ? (
               <Loader2 className='mr-2 h-5 w-5 animate-spin' />
@@ -277,6 +278,7 @@ export const AssemblingPhase = () => {
           </p>
         </div>
       )}
+      </div>
 
       {/* {trainerCount < 1 && (
         <div className='text-center py-8'>

@@ -28,18 +28,32 @@ export const UploadPhase = () => {
   };
 
   return (
-    <div className='bg-surface p-8 rounded-xl border border-border'>
-      <div className='flex items-center gap-3 mb-6'>
-        <Database className='w-6 h-6 text-primary' />
-        <h2 className='text-xl font-semibold text-text-primary'>
-          Upload Your Training Assets
-        </h2>
+    <div className='dashboard-panel overflow-hidden rounded-3xl'>
+      <div className='border-b border-white/10 bg-primary/5 p-6'>
+        <div className='flex flex-col gap-4 md:flex-row md:items-center md:justify-between'>
+          <div className='flex items-center gap-4'>
+            <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/30 bg-primary/15'>
+              <Database className='h-6 w-6 text-primary-light' />
+            </div>
+            <div>
+              <h2 className='text-2xl font-bold text-text-primary'>
+                Upload Training Assets
+              </h2>
+              <p className='mt-1 text-sm text-text-secondary'>
+                Name the job, attach the dataset, and provide the Python script.
+              </p>
+            </div>
+          </div>
+          <div className='rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-medium text-primary-light'>
+            Step 1 of 4
+          </div>
+        </div>
       </div>
-      <form onSubmit={handleSubmit} className='space-y-6'>
+      <form onSubmit={handleSubmit} className='space-y-6 p-6 lg:p-8'>
         <div>
           <label
             htmlFor='projectName'
-            className='block text-sm font-medium text-text-secondary mb-2'
+            className='mb-2 block text-sm font-semibold text-text-primary'
           >
             Project Name
           </label>
@@ -47,12 +61,12 @@ export const UploadPhase = () => {
             type='text'
             id='projectName'
             placeholder='e.g., Advanced Image Classification'
-            className='w-full bg-background border border-border text-text-primary rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary/50'
+            className='dashboard-input w-full rounded-2xl p-4 text-text-primary placeholder:text-text-secondary/70 focus:outline-none'
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
           />
         </div>
-        <div className='grid md:grid-cols-2 gap-6'>
+        <div className='grid gap-5 md:grid-cols-2'>
           <FileUpload
             label='Dataset (.csv)'
             fileType='dataset'
@@ -64,26 +78,26 @@ export const UploadPhase = () => {
             onFileSelect={setModelFile}
           />
         </div>
-        <div className='p-4 bg-primary/10 border border-primary/20 rounded-lg'>
-          <h3 className='font-medium text-text-primary mb-2 flex items-center gap-2'>
-            <Shield className='w-4 h-4 text-primary' />
+        <div className='rounded-2xl border border-primary/20 bg-primary/10 p-5'>
+          <h3 className='mb-3 flex items-center gap-2 font-semibold text-text-primary'>
+            <Shield className='h-4 w-4 text-primary-light' />
             What happens next?
           </h3>
-          <ul className='text-sm text-text-secondary space-y-1 list-disc list-inside'>
+          <ul className='grid gap-2 text-sm text-text-secondary md:grid-cols-2'>
             <li>
-              Files will be uploaded to <strong>IPFS via Pinata</strong> for
-              secure storage.
+              Files are uploaded to <strong>IPFS via Pinata</strong> for secure
+              storage.
             </li>
             <li>
-              You will then be prompted for <strong>payment on Hedera</strong>{' '}
-              to start the training round.
+              You then approve <strong>Hedera payment</strong> to initialize
+              the training round.
             </li>
           </ul>
         </div>
         <button
           type='submit'
           disabled={isLoading || !datasetFile || !modelFile || !projectName}
-          className='w-full flex items-center justify-center bg-primary text-background font-semibold py-3 px-4 rounded-lg hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
+          className='flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-primary-light to-primary px-4 py-4 font-semibold text-white transition-all duration-200 hover:shadow-[0_0_24px_rgba(217,70,239,0.24)] disabled:cursor-not-allowed disabled:opacity-50'
         >
           <Upload className='mr-2 h-5 w-5' />
           {isLoading ? 'Uploading...' : 'Upload Assets & Proceed to Payment'}

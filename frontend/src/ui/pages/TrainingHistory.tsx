@@ -14,7 +14,7 @@ import {
 } from '../utils/hederaHelper';
 import { LogViewerModal } from '../components/history/LogViewerModal';
 import { CONTRACT_ID } from '../utils/constant';
-import { History } from 'lucide-react';
+import { CheckCircle, Clock, History, Loader } from 'lucide-react';
 
 export interface TrainingProject {
   id: string;
@@ -135,23 +135,55 @@ const TrainingHistoryPage = () => {
     }
   };
 
+  const completedCount = history.filter((job) => job.status === 'Completed').length;
+  const runningCount = history.filter((job) => job.status === 'Running').length;
+  const initializedCount = history.filter(
+    (job) => job.status === 'Initialized'
+  ).length;
+
   return (
-    <div>
-      <div className='pb-6 mb-6 border-b border-border'>
-        <div className='flex items-center gap-3'>
-          <div className='w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center border border-primary/20'>
-            <History className='w-5 h-5 text-primary' />
+    <div className='space-y-6'>
+      <section className='dashboard-panel rounded-3xl p-6 lg:p-8'>
+        <div className='flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between'>
+          <div className='flex items-start gap-4'>
+            <div className='flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-primary/35 bg-gradient-to-br from-primary-light/35 to-primary/15'>
+              <History className='h-7 w-7 text-primary-light' />
+            </div>
+            <div>
+              <h1 className='text-3xl font-bold text-text-primary'>
+                Training History
+              </h1>
+              <p className='mt-2 max-w-xl text-sm leading-relaxed text-text-secondary'>
+                Review live jobs, inspect submitted weights, open logs, and run
+                aggregation checks for completed projects.
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className='text-2xl font-bold text-text-primary'>
-              Training History
-            </h1>
-            <p className='text-sm text-text-secondary mt-0.5'>
-              Overview of all your past and current training jobs.
-            </p>
+          <div className='grid grid-cols-3 gap-3 lg:w-[420px]'>
+            <div className='rounded-2xl border border-white/10 bg-white/[0.035] p-4'>
+              <CheckCircle className='mb-3 h-4 w-4 text-emerald-300' />
+              <p className='text-2xl font-bold text-text-primary'>
+                {completedCount}
+              </p>
+              <p className='text-xs text-text-secondary'>Completed</p>
+            </div>
+            <div className='rounded-2xl border border-white/10 bg-white/[0.035] p-4'>
+              <Loader className='mb-3 h-4 w-4 text-blue-300' />
+              <p className='text-2xl font-bold text-text-primary'>
+                {runningCount}
+              </p>
+              <p className='text-xs text-text-secondary'>Running</p>
+            </div>
+            <div className='rounded-2xl border border-white/10 bg-white/[0.035] p-4'>
+              <Clock className='mb-3 h-4 w-4 text-yellow-300' />
+              <p className='text-2xl font-bold text-text-primary'>
+                {initializedCount}
+              </p>
+              <p className='text-xs text-text-secondary'>Queued</p>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       <HistoryTable
         history={history}

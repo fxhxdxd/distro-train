@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist-electron/main.js",
   "description": "A Web3-powered desktop app built with Electron.",
-  "author": "Karan Kumar Das",
+  "author": "Fahad Khan",
   "scripts": {
     "dev": "npm-run-all --parallel dev:react dev:electron",
     "dev:react": "vite",
@@ -58,6 +58,7 @@
     "globals": "^16.3.0",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
-    "vite": "^7.1.2"
+    "vite": "^7.1.2",
+    "vite-plugin-node-polyfills": "^0.25.0"
   }
 }

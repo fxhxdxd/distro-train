@@ -94,7 +94,7 @@ const DetailRow = ({
   };
 
   return (
-    <div className='bg-background p-4 rounded-lg border border-border'>
+    <div className='bg-white/5 p-4 rounded-lg border border-white/10'>
       <div className='flex justify-between items-center mb-2'>
         <span className='text-text-secondary font-medium text-sm'>{label}</span>
         <div className='flex items-center gap-2'>
@@ -199,7 +199,7 @@ const WeightsHashRow = ({
   // Use structured metadata when available (new training runs)
   if (weightsMetadata && weightsMetadata.length > 0) {
     return (
-      <div className='bg-background p-4 rounded-lg border border-border'>
+      <div className='bg-white/5 p-4 rounded-lg border border-white/10'>
         <div className='flex justify-between items-center mb-3'>
           <span className='text-text-secondary font-medium text-sm'>
             Final Weights (Hedera)
@@ -296,7 +296,7 @@ const WeightsHashRow = ({
   }
 
   return (
-    <div className='bg-background p-4 rounded-lg border border-border'>
+    <div className='bg-white/5 p-4 rounded-lg border border-white/10'>
       <div className='flex justify-between items-center mb-3'>
         <span className='text-text-secondary font-medium text-sm'>
           Final Weights Hash (Hedera)
@@ -397,9 +397,9 @@ export const ProjectDetailsModal = ({
               leaveFrom='opacity-100'
               leaveTo='opacity-0 scale-95'
             >
-              <Dialog.Panel className='w-full max-w-3xl transform overflow-hidden rounded-2xl bg-surface border border-border shadow-2xl transition-all'>
+              <Dialog.Panel className='w-full max-w-3xl transform overflow-hidden rounded-2xl glass-panel shadow-2xl transition-all'>
                 {/* Header */}
-                <div className='bg-gradient-to-r from-primary/10 to-primary/5 p-6 border-b border-border'>
+                <div className='bg-gradient-to-r from-primary-light/10 to-primary/10 p-6 border-b border-white/10'>
                   <Dialog.Title
                     as='h3'
                     className='text-2xl font-bold text-text-primary flex items-center gap-3'
@@ -457,7 +457,7 @@ export const ProjectDetailsModal = ({
                   <div className='flex items-center gap-3'>
                     <button
                       type='button'
-                      className='flex items-center gap-2 px-6 py-3 bg-primary text-background font-semibold rounded-lg hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50'
+                      className='flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-light to-primary text-white font-semibold rounded-lg hover:shadow-[0_0_24px_rgba(217,70,239,0.24)] transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50'
                       onClick={onClose}
                     >
                       Close

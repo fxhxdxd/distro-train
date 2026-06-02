@@ -375,9 +375,9 @@ export const AggregationModal = ({
               leaveFrom='opacity-100'
               leaveTo='opacity-0 scale-95'
             >
-              <Dialog.Panel className='w-full max-w-2xl bg-surface border border-border rounded-2xl shadow-2xl overflow-hidden'>
+              <Dialog.Panel className='w-full max-w-2xl glass-panel rounded-2xl shadow-2xl overflow-hidden'>
                 {/* Header */}
-                <div className='bg-gradient-to-r from-primary/10 to-primary/5 px-6 py-5 border-b border-border'>
+                <div className='bg-gradient-to-r from-primary-light/10 to-primary/10 px-6 py-5 border-b border-white/10'>
                   <div className='flex items-center justify-between'>
                     <Dialog.Title className='flex items-center gap-3 text-lg font-bold text-text-primary'>
                       <div className='w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center border border-primary/30'>
@@ -646,7 +646,7 @@ export const AggregationModal = ({
                   <button
                     onClick={runAggregation}
                     disabled={isRunning || selectedEntries.length < 2}
-                    className='w-full flex items-center justify-center gap-2 py-3 px-4 bg-primary text-background font-semibold rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                    className='w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-primary-light to-primary text-white font-semibold rounded-lg hover:shadow-[0_0_24px_rgba(217,70,239,0.24)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
                   >
                     {isRunning ? (
                       <>
@@ -1116,7 +1116,7 @@ export const AggregationModal = ({
                   <button
                     onClick={onClose}
                     disabled={isRunning}
-                    className='px-4 py-2 text-sm font-medium bg-primary text-background rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50'
+                    className='px-4 py-2 text-sm font-medium bg-gradient-to-r from-primary-light to-primary text-white rounded-lg hover:shadow-[0_0_20px_rgba(217,70,239,0.2)] transition-colors disabled:opacity-50'
                   >
                     Close
                   </button>

@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
+import MarketingLayout from './components/MarketingLayout';
 import NewTraining from './pages/NewTraining';
 import TrainingHistory from './pages/TrainingHistory';
 import ErrorPage from './pages/ErrorPage';
@@ -9,7 +10,9 @@ import HomePage from './pages/HomePage';
 function App() {
   return (
     <Routes>
-      <Route path='/' element={<HomePage />} />
+      <Route element={<MarketingLayout />}>
+        <Route path='/' element={<HomePage />} />
+      </Route>
       <Route element={<Layout />}>
         <Route path='training' element={<NewTraining />} />
         <Route path='history' element={<TrainingHistory />} />

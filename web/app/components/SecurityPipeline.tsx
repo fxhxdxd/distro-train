@@ -70,7 +70,7 @@ export default function SecurityPipeline() {
           transition={{ duration: 0.6 }}
           className="text-center mb-6"
         >
-          <p className="text-xs font-mono tracking-widest text-indigo-400 uppercase mb-3">
+          <p className="text-xs font-mono tracking-widest text-fuchsia-400 uppercase mb-3">
             TrustGossip Security
           </p>
           <h2 className="text-3xl md:text-4xl font-semibold text-zinc-100 mb-4">
@@ -112,12 +112,12 @@ export default function SecurityPipeline() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.09 }}
-              className="card-glass rounded-xl p-5 flex gap-5 group hover:border-indigo-500/20 transition-colors"
+              className="card-glass rounded-xl p-5 flex gap-5 group hover:border-fuchsia-500/20 transition-colors"
             >
               {/* Stage icon + number */}
               <div className="shrink-0 flex flex-col items-center gap-2">
-                <div className="w-10 h-10 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center group-hover:bg-indigo-500/15 transition-colors">
-                  <stage.icon className="w-5 h-5 text-indigo-400" />
+                <div className="w-10 h-10 rounded-lg bg-fuchsia-500/10 border border-fuchsia-500/20 flex items-center justify-center group-hover:bg-fuchsia-500/15 transition-colors">
+                  <stage.icon className="w-5 h-5 text-fuchsia-400" />
                 </div>
                 <span className="text-xs font-mono text-zinc-700">{stage.num}</span>
               </div>
