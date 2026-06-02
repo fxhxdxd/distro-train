@@ -2,7 +2,6 @@ import {
   Rocket,
   History,
   Settings,
-  Brain,
   Wallet,
   ChevronDown,
   Copy,
@@ -13,6 +12,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useWalletInterface } from '../services/useWalletInterface';
+import logo from '../assets/logo.png';
 
 const Sidebar = () => {
   const { accountId, balance, isConnected, actions } = useWalletInterface();
@@ -43,8 +43,8 @@ const Sidebar = () => {
           className='dashboard-panel flex cursor-pointer items-center gap-3 rounded-2xl p-4 transition-all hover:border-primary/30'
           onClick={() => navigate('/')}
         >
-          <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/35 bg-gradient-to-br from-primary-light/30 to-primary/15 shadow-[0_0_28px_rgba(168,85,247,0.18)]'>
-            <Brain className='h-6 w-6 text-primary-light' />
+          <div className='flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-primary/35 bg-primary/10 shadow-[0_0_28px_rgba(168,85,247,0.18)]'>
+            <img src={logo} alt='DecentraAI Logo' className='h-full w-full object-contain' />
           </div>
           <div className='min-w-0'>
             <h1 className='text-xl font-bold text-text-primary'>DecentraAI</h1>

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
-  Brain,
   Coins,
   Cpu,
   Database,
@@ -13,6 +12,7 @@ import {
   Upload,
   Users,
 } from 'lucide-react';
+import logo from '../assets/logo.png';
 import { useTraining } from '../contexts/TrainingContext';
 import { TrainingStepper } from '../components/training/TrainingStepper';
 import { UploadPhase } from '../components/training/UploadPhase';
@@ -138,8 +138,8 @@ const NewTrainingPage = () => {
       <section className='dashboard-panel overflow-hidden rounded-3xl'>
         <div className='flex flex-col gap-6 p-6 lg:flex-row lg:items-center lg:justify-between lg:p-8'>
           <div className='flex items-start gap-4'>
-            <div className='flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-primary/35 bg-gradient-to-br from-primary-light/35 to-primary/15 shadow-[0_0_30px_rgba(168,85,247,0.2)]'>
-              <Brain className='h-7 w-7 text-primary-light' />
+            <div className='flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-primary/35 bg-primary/10 shadow-[0_0_30px_rgba(168,85,247,0.2)]'>
+              <img src={logo} alt='DecentraAI Logo' className='h-full w-full object-contain' />
             </div>
             <div>
               <div className='mb-3 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-medium text-primary-light'>
