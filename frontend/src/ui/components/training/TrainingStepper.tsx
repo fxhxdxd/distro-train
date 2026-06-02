@@ -28,8 +28,8 @@ export const TrainingStepper = () => {
   const currentPhaseNumber = getPhaseStep(currentPhase);
 
   return (
-    <div className='dashboard-panel rounded-2xl p-4 lg:p-5'>
-      <div className='grid gap-3 md:grid-cols-4'>
+    <div className='rounded-2xl border border-white/10 px-4 py-5'>
+      <div className='grid gap-4 md:grid-cols-4'>
         {steps.map((step, index) => {
           const stepNumber = index + 1;
           const isActive = currentPhaseNumber > stepNumber;
@@ -38,17 +38,11 @@ export const TrainingStepper = () => {
           return (
             <React.Fragment key={index}>
               <div
-                className={`relative rounded-2xl border p-4 transition-all ${
-                  isActive
-                    ? 'border-primary/30 bg-primary/10'
-                    : isCurrent
-                      ? 'border-primary/50 bg-gradient-to-br from-primary/20 to-primary-light/10 shadow-[0_0_28px_rgba(168,85,247,0.16)]'
-                      : 'border-white/10 bg-white/[0.025]'
-                }`}
+                className='relative flex items-center gap-3 md:flex-col md:items-start'
               >
                 {index < steps.length - 1 && (
                   <div
-                    className={`absolute left-[calc(100%+0.35rem)] top-1/2 hidden h-px w-[calc(100%-0.7rem)] md:block ${
+                    className={`absolute left-[3.5rem] right-[-1rem] top-5 hidden h-px md:block ${
                       isActive ? 'bg-primary/70' : 'bg-white/10'
                     }`}
                   />
@@ -68,9 +62,9 @@ export const TrainingStepper = () => {
                     <step.icon className='h-5 w-5' />
                   )}
                 </div>
-                <div className='flex items-center justify-between gap-3'>
+                <div className='min-w-0 md:w-full'>
                   <span
-                    className={`text-sm font-semibold ${
+                    className={`block text-sm font-semibold ${
                     isActive || isCurrent
                       ? 'text-text-primary'
                       : 'text-text-secondary'
@@ -78,7 +72,7 @@ export const TrainingStepper = () => {
                   >
                     {step.label}
                   </span>
-                  <span className='text-xs text-text-secondary'>
+                  <span className='mt-1 block text-xs text-text-secondary'>
                     0{stepNumber}
                   </span>
                 </div>
