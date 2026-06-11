@@ -68,7 +68,10 @@ from logs import setup_logging
 load_dotenv()
 logger = setup_logging("coordinator")
 
-env_path = Path(__file__).parent / ".env"
+# Bootstrap keypair lives in the gitignored root .env (where the
+# BOOTSTRAP_PRIVATE_KEY/BOOTSTRAP_PUBLIC_KEY placeholders are), NOT the
+# tracked p2p/.env — keeps the private key out of version control.
+env_path = Path(__file__).parent.parent / ".env"
 GOSSIPSUB_PROTOCOL_ID = TProtocol("/meshsub/1.0.0")
 FED_LEARNING_MESH = "fed-learn"
 PUBLIC_IP = os.getenv("IP")
@@ -489,6 +492,7 @@ class Node:
                         for k, v in assignments.items():
                             if str(k) == node_id:
                                 matched_any = True
+                                failed_chunks = []
                                 for chunk_cid in v:
 
                                     msg = f"Training of chunk {chunk_cid} started...."
@@ -522,25 +526,60 @@ class Node:
                                             logger.error("Task ID not set, cannot submit weights to blockchain")
                                             msg = "Failed to submit weights: Task ID not available"
                                             self.submit_hcs_message(msg)
+                                            failed_chunks.append(chunk_cid)
                                         else:
                                             logger.info(f"=== SUBMITTING TO BLOCKCHAIN ===")
                                             logger.info(f"Task ID: {self.current_task_id}")
                                             logger.info(f"Weights CID being submitted: {ipfs_cid}")
                                             logger.info(f"================================")
 
-                                            self.publish_on_chain(
-                                                self.current_task_id,
-                                                ipfs_cid,
-                                            )
+                                            # A failed submitWeights call used to
+                                            # propagate out of this loop and abort
+                                            # every remaining chunk for this
+                                            # trainer (leaving the task stuck and
+                                            # its escrow locked). Retry transient
+                                            # Hedera failures, then move on to the
+                                            # next chunk regardless.
+                                            submitted = False
+                                            for attempt in range(1, 4):
+                                                try:
+                                                    self.publish_on_chain(
+                                                        self.current_task_id,
+                                                        ipfs_cid,
+                                                    )
+                                                    submitted = True
+                                                    break
+                                                except Exception as submit_err:
+                                                    logger.error(
+                                                        f"submitWeights attempt {attempt}/3 "
+                                                        f"failed for chunk {chunk_cid}: {submit_err}"
+                                                    )
+                                                    if attempt < 3:
+                                                        await trio.sleep(2 * attempt)
+                                            if not submitted:
+                                                failed_chunks.append(chunk_cid)
+                                                self.submit_hcs_message(
+                                                    f"Failed to submit weights for chunk "
+                                                    f"{chunk_cid} after 3 attempts"
+                                                )
                                     else:
                                         msg = (
                                             f"No weights returned for chunk {chunk_cid}"
                                         )
                                         logger.error(msg)
                                         self.submit_hcs_message(msg)
+                                        failed_chunks.append(chunk_cid)
 
-                                msg = "Training on all assigned chunks and blockchain upload: Completed"
-                                logger.info(msg)
+                                if failed_chunks:
+                                    msg = (
+                                        f"Training round finished with "
+                                        f"{len(failed_chunks)}/{len(v)} failed chunk(s): "
+                                        f"{failed_chunks}"
+                                    )
+                                    logger.error(msg)
+                                else:
+                                    msg = "Training on all assigned chunks and blockchain upload: Completed"
+                                    logger.info(msg)
                                 self.submit_hcs_message(msg)
 
                                 await self.pubsub.publish(
