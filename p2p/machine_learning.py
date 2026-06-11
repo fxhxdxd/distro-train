@@ -1,6 +1,5 @@
 import os
 import sys
-import json
 
 import requests
 
@@ -56,6 +55,11 @@ class MLTrainer:
         if os.path.exists(model_file):
             os.remove(model_file)
 
+        # Initialised before the try so the finally-block cleanup is safe
+        # even when an early download failure skips the alias creation.
+        legacy_dataset_path = os.path.join(cwd, "dataset.csv")
+        legacy_created = False
+
         try:
             await self.akave_client.download_file_from_url(
                 chunk_url, dataset_file, send_channel
@@ -82,20 +86,31 @@ class MLTrainer:
                 raise ValueError("Downloaded model file is empty")
 
             # Create symlink for backward compatibility with old model scripts
-            # This allows models that hardcode "./dataset.csv" to still work
-            legacy_dataset_path = os.path.join(cwd, "dataset.csv")
-            # Use lexists to detect broken symlinks too
-            if os.path.lexists(legacy_dataset_path):
+            # This allows models that hardcode "./dataset.csv" to still work.
+            # Only replace symlinks we (or a previous run) created — a real
+            # ./dataset.csv belongs to the user and must never be deleted.
+            if os.path.islink(legacy_dataset_path):
                 os.remove(legacy_dataset_path)
+            elif os.path.exists(legacy_dataset_path):
+                logger.warning(
+                    f"{legacy_dataset_path} is a real file — leaving it intact "
+                    f"and skipping the legacy alias. Old model scripts that "
+                    f"hardcode ./dataset.csv would read the wrong data; this "
+                    f"model receives the chunk via DATASET_PATH."
+                )
+                legacy_dataset_path = None
 
-            try:
-                os.symlink(dataset_file, legacy_dataset_path)
-                logger.info(f"Created symlink: {legacy_dataset_path} -> {dataset_file}")
-            except OSError as e:
-                logger.warning(f"Could not create symlink (may not be supported): {e}")
-                import shutil
-                shutil.copy2(dataset_file, legacy_dataset_path)
-                logger.info(f"Copied dataset to legacy path: {legacy_dataset_path}")
+            if legacy_dataset_path:
+                try:
+                    os.symlink(dataset_file, legacy_dataset_path)
+                    legacy_created = True
+                    logger.info(f"Created symlink: {legacy_dataset_path} -> {dataset_file}")
+                except OSError as e:
+                    logger.warning(f"Could not create symlink (may not be supported): {e}")
+                    import shutil
+                    shutil.copy2(dataset_file, legacy_dataset_path)
+                    legacy_created = True
+                    logger.info(f"Copied dataset to legacy path: {legacy_dataset_path}")
 
             # Read model file and exec it
             with open(model_file, "r") as f:
@@ -149,33 +164,6 @@ class MLTrainer:
             logger.error(msg)
             await send_channel.send(["send-hcs", msg])
 
-            # #region agent log
-            try:
-                debug_entry = {
-                    "sessionId": "f5fd95",
-                    "runId": "pre-fix",
-                    "hypothesisId": "H1",
-                    "location": "p2p/machine_learning.py:146",
-                    "message": "train_on_chunk failed before returning weights_url",
-                    "data": {
-                        "exception_type": type(e).__name__,
-                        "exception_message": str(e),
-                        "chunk_url": chunk_url,
-                        "model_url": model_url,
-                    },
-                    "timestamp": __import__("time").time() * 1000,
-                }
-                with open(
-                    "/Users/ayushpetwal/Desktop/BTP/distro-train/.cursor/debug-f5fd95.log",
-                    "a",
-                    encoding="utf-8",
-                ) as f:
-                    f.write(json.dumps(debug_entry) + "\n")
-            except Exception:
-                # Logging must never break training flow
-                pass
-            # #endregion agent log
-
             return None  # Explicitly return None on failure
 
         finally:
@@ -185,9 +173,11 @@ class MLTrainer:
             if os.path.exists(dataset_file):
                 os.remove(dataset_file)
 
-            # Clean up legacy symlink/copy
-            legacy_dataset_path = os.path.join(cwd, "dataset.csv")
-            if os.path.exists(legacy_dataset_path):
+            # Clean up the legacy alias — but only the one we created.
+            # os.path.exists() is False for a broken symlink (its target was
+            # just deleted above), which used to leave dangling ./dataset.csv
+            # links behind; lexists catches both.
+            if legacy_created and os.path.lexists(legacy_dataset_path):
                 os.remove(legacy_dataset_path)
                 logger.info(f"Cleaned up legacy dataset path: {legacy_dataset_path}")
 

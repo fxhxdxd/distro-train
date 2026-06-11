@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   deleteHistoryItem,
   getTrainingHistory,
@@ -57,6 +57,18 @@ const TrainingHistoryPage = () => {
     loadHistory();
   }, []);
 
+  // Per-job event-fetch tracker. The contract only flips taskExists to false
+  // after EVERY chunk's weights are submitted, but the mirror node indexes
+  // those events with a delay — fetching once and freezing the result used to
+  // persist a partial weight list forever. We keep the job in the poll set
+  // until the mirror has indexed all expected files (or the count is stable /
+  // we hit the attempt cap), so weightsMetadata is never a frozen partial.
+  const fetchTrackerRef = useRef<
+    Record<string, { attempts: number; lastCount: number }>
+  >({});
+  const pollInFlightRef = useRef(false);
+  const MAX_FETCH_ATTEMPTS = 12; // ~1 min of retries after on-chain completion
+
   useEffect(() => {
     const jobsToPoll = history.filter((job) => job.status === 'Running');
 
@@ -64,50 +76,97 @@ const TrainingHistoryPage = () => {
       return;
     }
 
-    // polling for 20 seconds
     const intervalId = setInterval(async () => {
+      // fetchWeightsSubmittedEvent can take >5s; don't stack overlapping runs
+      if (pollInFlightRef.current) return;
+      pollInFlightRef.current = true;
       console.log(`Polling ${jobsToPoll.length} active job(s)...`);
-      for (const job of jobsToPoll) {
-        try {
-          const isComplete = await checkTaskStatus(job.id);
-          // const isComplete = true;
+      try {
+        for (const job of jobsToPoll) {
+          try {
+            const stillRunning = await checkTaskStatus(job.id);
 
-          if (!isComplete) {
+            // null = the status query itself failed. Treating that as
+            // "complete" is what froze partial weight lists — skip this tick.
+            if (stillRunning === null || stillRunning) continue;
+
+            // Task finished on-chain: every chunk's weights were submitted.
             window.electronAPI?.stopLogSubscription();
             const weightsArray = await fetchWeightsSubmittedEvent(
               CONTRACT_ID,
               job.id
             );
-            if (weightsArray && weightsArray.length > 0) {
-              const weightsHash = weightsArray.map((w) => w.url).join(', ');
 
-              await updateTrainingHistoryItem({
-                projectId: job.id,
-                newStatus: 'Completed',
-                newWeightsHash: weightsHash,
-                weightsMetadata: weightsArray,
-              });
+            const tracker = fetchTrackerRef.current[job.id] ?? {
+              attempts: 0,
+              lastCount: -1,
+            };
+            tracker.attempts += 1;
 
-              setHistory((prev) =>
-                prev.map((p) =>
-                  p.id === job.id
-                    ? {
-                        ...p,
-                        status: 'Completed',
-                        weightsHash,
-                        weightsMetadata: weightsArray,
-                      }
-                    : p
-                )
+            const found = weightsArray?.length ?? 0;
+            const expected =
+              job.chunkCount && job.chunkCount > 0 ? job.chunkCount : null;
+
+            // Complete when the mirror node has indexed all expected files;
+            // without a known chunkCount, require the count to be stable
+            // across two consecutive polls. The attempt cap accepts a partial
+            // (non-empty) list rather than polling forever.
+            const haveAllFiles =
+              found > 0 &&
+              ((expected !== null && found >= expected) ||
+                (expected === null && found === tracker.lastCount) ||
+                tracker.attempts >= MAX_FETCH_ATTEMPTS);
+
+            tracker.lastCount = found;
+            fetchTrackerRef.current[job.id] = tracker;
+
+            if (!haveAllFiles || !weightsArray) {
+              console.log(
+                `Task ${job.id} done on-chain but mirror node has ` +
+                  `${found}/${expected ?? '?'} weight file(s) — retrying ` +
+                  `(attempt ${tracker.attempts}/${MAX_FETCH_ATTEMPTS})`
               );
-              toast.success(
-                `Project '${job.projectName}' has completed training!`
+              continue;
+            }
+
+            if (expected !== null && found < expected) {
+              toast.warning(
+                `Project '${job.projectName}': only ${found} of ${expected} ` +
+                  `weight files were found on the mirror node.`
               );
             }
+
+            const weightsHash = weightsArray.map((w) => w.url).join(', ');
+
+            await updateTrainingHistoryItem({
+              projectId: job.id,
+              newStatus: 'Completed',
+              newWeightsHash: weightsHash,
+              weightsMetadata: weightsArray,
+            });
+
+            setHistory((prev) =>
+              prev.map((p) =>
+                p.id === job.id
+                  ? {
+                      ...p,
+                      status: 'Completed',
+                      weightsHash,
+                      weightsMetadata: weightsArray,
+                    }
+                  : p
+              )
+            );
+            delete fetchTrackerRef.current[job.id];
+            toast.success(
+              `Project '${job.projectName}' has completed training!`
+            );
+          } catch (error) {
+            console.error(`Polling failed for job ${job.id}:`, error);
           }
-        } catch (error) {
-          console.error(`Polling failed for job ${job.id}:`, error);
         }
+      } finally {
+        pollInFlightRef.current = false;
       }
     }, 5000);
     return () => clearInterval(intervalId);

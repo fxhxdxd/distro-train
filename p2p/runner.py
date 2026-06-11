@@ -190,13 +190,45 @@ async def interactive_shell() -> None:
                 if node.role != "bootstrap":
                     # Now we connect to the bootstrap node, and join in the fed-learn pubsub mesh
                     bootstrap_addr = os.getenv("BOOTSTRAP_ADDR")
+                    if not bootstrap_addr:
+                        raise RuntimeError(
+                            "BOOTSTRAP_ADDR is not set. A client/trainer node needs the "
+                            "bootstrap node's full multiaddr (…/tcp/<port>/p2p/<peer-id>) "
+                            "in your .env before it can join the mesh."
+                        )
                     maddr = multiaddr.Multiaddr(bootstrap_addr)
                     info = info_from_p2p_addr(maddr)
 
                     node.bootstrap_addr = info.addrs[0]
                     node.bootstrap_id = info.peer_id
-                    await node.host.connect(info)
-                    logger.info("Connected with the BOOTSTRAP node")
+
+                    # A failed dial to the bootstrap must NOT tear down the whole node
+                    # (host, pubsub, gossipsub, API server). Retry with backoff; if it
+                    # still fails, log one actionable line and keep running so the node
+                    # stays usable and can join the mesh once a peer becomes reachable.
+                    connected = False
+                    for attempt in range(1, 6):
+                        try:
+                            await node.host.connect(info)
+                            connected = True
+                            logger.info("Connected with the BOOTSTRAP node")
+                            break
+                        except Exception as exc:
+                            logger.warning(
+                                f"Bootstrap connect attempt {attempt}/5 failed: "
+                                f"{exc.__class__.__name__}: {exc}"
+                            )
+                            await trio.sleep(2 * attempt)
+
+                    if not connected:
+                        logger.error(
+                            "Could not reach the bootstrap node at %s after 5 attempts; "
+                            "continuing without it (node is up but NOT in the mesh yet). "
+                            "Check that: (1) the /p2p/<peer-id> in BOOTSTRAP_ADDR matches "
+                            "the running bootstrap's key, (2) nothing else is bound to that "
+                            "host:port, (3) the bootstrap node is actually running.",
+                            bootstrap_addr,
+                        )
 
                     # Subscribe to the fed-learn mesh
                     worker_subscription = await node.pubsub.subscribe(FED_LEARNING_MESH)

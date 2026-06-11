@@ -45,7 +45,16 @@ export const getTaskId = async () => {
   return message.toString();
 };
 
-export const checkTaskStatus = async (taskId: string): Promise<boolean> => {
+/**
+ * Returns true while the task is still running on-chain, false once every
+ * chunk has been submitted (taskExists flips to false), and null when the
+ * query itself failed. Callers MUST treat null as "unknown" — a failed query
+ * previously returned false, which the history poller misread as "task
+ * complete" and froze a partial weight list into the project.
+ */
+export const checkTaskStatus = async (
+  taskId: string
+): Promise<boolean | null> => {
   try {
     const client = Client.forTestnet();
     client.setDefaultMaxQueryPayment(new Hbar(5));
@@ -65,8 +74,7 @@ export const checkTaskStatus = async (taskId: string): Promise<boolean> => {
     return message;
   } catch (error) {
     console.error(`Failed to check status for task ${taskId}:`, error);
-    // Return false on error to prevent the polling from crashing
-    return false;
+    return null;
   }
 };
 
