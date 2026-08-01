@@ -39,6 +39,9 @@ export interface IElectronAPI {
   stopLogSubscription: () => void;
   getLogs: (projectId: string) => Promise<any[]>;
   onNewLog: (callback: (log: any) => void) => () => void;
+  saveRoundKey: (taskId: string, privateKeyB64: string) => Promise<void>;
+  loadRoundKey: (taskId: string) => Promise<string | null>;
+  deleteRoundKey: (taskId: string) => Promise<boolean>;
   downloadFile: (data: {
     url: string;
     fileName: string;

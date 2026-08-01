@@ -60,6 +60,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   getLogs: (projectId: string) => ipcRenderer.invoke('logs:get', projectId),
 
+  // Per-round RSA private keys (OS keychain)
+  saveRoundKey: (taskId: string, privateKeyB64: string) =>
+    ipcRenderer.invoke('roundkey:save', taskId, privateKeyB64),
+  loadRoundKey: (taskId: string) =>
+    ipcRenderer.invoke('roundkey:load', taskId),
+  deleteRoundKey: (taskId: string) =>
+    ipcRenderer.invoke('roundkey:delete', taskId),
+
   onNewLog: (callback: (log: any) => void) => {
     const subscription = (_event: any, log: any) => callback(log);
     ipcRenderer.on('hcs:new-log', subscription);

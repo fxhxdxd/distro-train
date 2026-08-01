@@ -27,6 +27,7 @@ import { ContractId, Hbar, TopicId } from '@hashgraph/sdk';
 import { ContractFunctionParameterBuilder } from '../services/contractFunctionParameterBuilder';
 import { useWalletInterface } from '../services/useWalletInterface';
 import { getTaskId } from '../utils/hederaHelper';
+import { generateAndStoreRoundKeypair } from '../utils/sessionKeys';
 import { CONTRACT_ID } from '../utils/constant';
 
 export type TrainingPhase =
@@ -291,25 +292,6 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  function arrayBufferToBase64(buffer: any) {
-    let binary = '';
-    const bytes = new Uint8Array(buffer);
-    const chunkSize = 0x8000; // avoid stack overflow for big buffers
-
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      const chunk = bytes.subarray(i, i + chunkSize);
-      binary += String.fromCharCode.apply(null, Array.from(chunk));
-    }
-
-    return btoa(binary);
-  }
-
-  // Wrap Base64 with PEM headers
-  function toPem(base64: any, label: any) {
-    const lines = base64.match(/.{1,64}/g).join('\n');
-    return `-----BEGIN ${label} KEY-----\n${lines}\n-----END ${label} KEY-----`;
-  }
-
   const beginFinalTraining = async () => {
     if (!result?.datasetHash || !result?.modelHash || !projectId) {
       return toast.error('Missing asset hashes. Cannot start training.');
@@ -319,28 +301,18 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
     const toastId = toast.loading('Sending command to start final training...');
 
     try {
-      const { publicKey } = await crypto.subtle.generateKey(
-        {
-          name: 'RSA-OAEP',
-          modulusLength: 2048,
-          publicExponent: new Uint8Array([1, 0, 1]),
-          hash: 'SHA-256',
-        },
-        true,
-        ['encrypt', 'decrypt']
-      );
-      const spki = await crypto.subtle.exportKey('spki', publicKey);
-      const publicPem: string = toPem(arrayBufferToBase64(spki), 'PUBLIC');
+      // Throwaway keypair for this round. The private half is persisted under
+      // the task ID before the public half goes out, so a submission can never
+      // arrive for a key we cannot read back.
+      const { publicPem } = await generateAndStoreRoundKeypair(projectId);
 
+      // The assign message is space-delimited, so a PEM (which has both spaces
+      // and newlines) has to be escaped to survive the split on the trainer.
       let transformed = publicPem
         .replace('BEGIN PUBLIC KEY', 'BEGIN#PUBLIC#KEY')
         .replace('END PUBLIC KEY', 'END#PUBLIC#KEY');
       transformed = transformed.replace(/\n/g, '?');
 
-      // Export private key (PKCS#8) - stored for future use
-      // const pkcs8 = await crypto.subtle.exportKey('pkcs8', privateKey);
-      // TODO: Store the private key
-      // const privatePem = toPem(arrayBufferToBase64(pkcs8), 'PRIVATE');
       const success = await startFinalTraining({
         projectId,
         datasetAndModelHashAndPublicKey: `${result.datasetHash} ${result.modelHash} ${transformed}`,
