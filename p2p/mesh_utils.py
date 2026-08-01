@@ -42,6 +42,25 @@ class Mesh:
                 return peers_id
         return []
 
+    def get_channel_client(self, channel: str):
+        """
+        Peer id of the CLIENT that opened `channel`, per the bootstrap mesh.
+
+        A round has exactly one client: the ML user's node that called
+        `advertize`. Used to check that an `assign` message really came from
+        the round owner and not from another peer on the topic.
+
+        Returns None when the channel is unknown or lists no client. Callers
+        must read that as "cannot verify", never as "verified".
+        """
+        for topic, peers in self.bootstrap_mesh.items():
+            if topic != channel:
+                continue
+            for peer in peers:
+                if peer.get("role") == "CLIENT":
+                    return str(peer["peer_id"]).strip()
+        return None
+
     def is_mesh_summary(self, data: bytes) -> bool:
         """Try to check if the incoming bytes represent a mesh summary (dict)"""
         try:

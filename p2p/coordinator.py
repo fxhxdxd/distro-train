@@ -421,7 +421,39 @@ class Node:
                             f"assign {model_hash} {pub_key} {assignments}".encode(),
                         )
 
-                    if cmd == "assign" and len(parts) == 4:
+                    if cmd == "assign" and len(parts) == 5:
+                        sender_id = parts[4]
+
+                        # The public key arrives over a pubsub topic any peer
+                        # can publish to, and it is the key every trainer will
+                        # encrypt its weights to. Unbound, a mesh member could
+                        # forge an `assign` carrying its own key and harvest the
+                        # whole round's models: encrypting to an unauthenticated
+                        # key is not confidentiality, it just moves who reads it.
+                        # Bind the key to the peer that opened the round.
+                        round_owner = self.mesh.get_channel_client(
+                            self.training_topic
+                        )
+                        if round_owner is None:
+                            msg = (
+                                f"[assign] no CLIENT listed for topic "
+                                f"{self.training_topic}, refusing an assign that "
+                                f"cannot be verified (bootstrap mesh may be stale)"
+                            )
+                            logger.error(msg)
+                            self.submit_hcs_message(msg)
+                            continue
+
+                        if sender_id != round_owner:
+                            msg = (
+                                f"[assign] rejected: sender {sender_id} is not the "
+                                f"owner of round {self.training_topic} "
+                                f"(expected {round_owner})"
+                            )
+                            logger.error(msg)
+                            self.submit_hcs_message(msg)
+                            continue
+
                         pub_key = parts[2]
 
                         # Restore the PEM encoded public key
@@ -431,7 +463,9 @@ class Node:
                         self.client_pub_key = serialization.load_pem_public_key(
                             pub_key.encode("utf-8"), backend=default_backend()
                         )
-                        logger.debug("Client public key restored and added")
+                        logger.debug(
+                            f"Client public key accepted from round owner {round_owner}"
+                        )
                         model_hash = parts[1]
                         assignments: dict = ast.literal_eval(parts[3])
                         # host.get_id() returns a libp2p ID object, NOT a str.
@@ -770,8 +804,12 @@ class Node:
                     sender_id = base58.b58encode(message.from_id).decode()
                     decoded_message: str = message.data.decode("utf-8")
 
-                    # Ignore self-messages
-                    if self.host.get_id() == sender_id:
+                    # Ignore self-messages. host.get_id() is a libp2p ID object
+                    # and sender_id is a base58 str, so comparing them directly
+                    # was always False and every node processed its own
+                    # broadcasts. Same class of bug as the assignment-key
+                    # comparison below; normalise to str.
+                    if str(self.host.get_id()) == sender_id:
                         continue
 
                     if decoded_message.startswith("INCOMING"):
@@ -802,7 +840,11 @@ class Node:
                             logger.debug(f"BOOTSTRAP: {decoded_message}")
 
                     elif decoded_message.startswith("assign"):
+                        # Carry the sender through so the handler can check the
+                        # message really came from the node that opened the
+                        # round before trusting the public key inside it.
                         cmds = decoded_message.strip().split(" ", 3)
+                        cmds.append(sender_id)
                         await self.send_channel.send(cmds)
                     # General message
                     else:
