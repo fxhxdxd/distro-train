@@ -15,6 +15,7 @@ import trio
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from dotenv import load_dotenv
 from hypercorn.config import Config
 from hypercorn.trio import serve
@@ -74,6 +75,15 @@ logger = setup_logging("coordinator")
 env_path = Path(__file__).parent.parent / ".env"
 GOSSIPSUB_PROTOCOL_ID = TProtocol("/meshsub/1.0.0")
 FED_LEARNING_MESH = "fed-learn"
+
+# Wire format for an encrypted weight submission, dot-separated because the
+# base64 alphabet never emits a '.':
+#
+#   v1.<rsa_oaep(aes_key)>.<iv>.<aes_gcm_ciphertext||tag>
+#
+# The version prefix lets the client tell an encrypted payload apart from the
+# plaintext CIDs that earlier rounds put on-chain.
+ENCRYPTED_PAYLOAD_PREFIX = "v1"
 PUBLIC_IP = os.getenv("IP")
 IS_CLOUD = os.getenv("IS_CLOUD")
 TOPIC_ID = os.getenv("TOPIC_ID")
@@ -269,6 +279,44 @@ class Node:
             handle.join()
             print("Subscription cancelled. Exiting")
 
+    def encrypt_for_client(self, plaintext: str) -> str:
+        """
+        Encrypt a weight reference for the ML user who opened this round.
+
+        Hybrid scheme: a fresh AES-256-GCM key encrypts the payload and RSA-OAEP
+        wraps that key. Straight RSA-OAEP is enough for a bare CID (SHA-256 OAEP
+        over a 2048-bit modulus holds 256 - 2*32 - 2 = 190 bytes, a CIDv0 is 46)
+        but it breaks as soon as the payload is a presigned URL, which runs past
+        400 bytes. Wrapping a 32-byte key keeps the RSA operation a fixed size
+        whatever the payload, and GCM's authentication tag means a tampered
+        ciphertext fails to decrypt instead of decoding into garbage weights
+        that would silently poison the federated average.
+        """
+        if self.client_pub_key is None:
+            raise ValueError(
+                "No client public key for this round, refusing to submit in plaintext"
+            )
+
+        aes_key = AESGCM.generate_key(bit_length=256)
+        iv = os.urandom(12)  # 96 bits, the width GCM is specified for
+        ciphertext = AESGCM(aes_key).encrypt(iv, plaintext.encode("utf-8"), None)
+
+        wrapped_key = self.client_pub_key.encrypt(
+            aes_key,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None,
+            ),
+        )
+
+        def b64(raw: bytes) -> str:
+            return base64.b64encode(raw).decode("utf-8")
+
+        return ".".join(
+            [ENCRYPTED_PAYLOAD_PREFIX, b64(wrapped_key), b64(iv), b64(ciphertext)]
+        )
+
     def publish_on_chain(self, task_id, weights_hash):
         # Log submission details for debugging
         logger.info(f"Submitting weights to blockchain - Task ID: {task_id}")
@@ -454,41 +502,62 @@ class Node:
                                             msg = "Failed to submit weights: Task ID not available"
                                             self.submit_hcs_message(msg)
                                             failed_chunks.append(chunk_cid)
-                                        else:
-                                            logger.info(f"=== SUBMITTING TO BLOCKCHAIN ===")
-                                            logger.info(f"Task ID: {self.current_task_id}")
-                                            logger.info(f"Weights CID being submitted: {ipfs_cid}")
-                                            logger.info(f"================================")
+                                            continue
 
-                                            # A failed submitWeights call used to
-                                            # propagate out of this loop and abort
-                                            # every remaining chunk for this
-                                            # trainer (leaving the task stuck and
-                                            # its escrow locked). Retry transient
-                                            # Hedera failures, then move on to the
-                                            # next chunk regardless.
-                                            submitted = False
-                                            for attempt in range(1, 4):
-                                                try:
-                                                    self.publish_on_chain(
-                                                        self.current_task_id,
-                                                        ipfs_cid,
-                                                    )
-                                                    submitted = True
-                                                    break
-                                                except Exception as submit_err:
-                                                    logger.error(
-                                                        f"submitWeights attempt {attempt}/3 "
-                                                        f"failed for chunk {chunk_cid}: {submit_err}"
-                                                    )
-                                                    if attempt < 3:
-                                                        await trio.sleep(2 * attempt)
-                                            if not submitted:
-                                                failed_chunks.append(chunk_cid)
-                                                self.submit_hcs_message(
-                                                    f"Failed to submit weights for chunk "
-                                                    f"{chunk_cid} after 3 attempts"
+                                        # WeightsSubmitted logs are public, so a
+                                        # plaintext CID hands the trained model
+                                        # to anyone scanning the mirror node.
+                                        # Fail the chunk rather than fall back to
+                                        # plaintext: a silent downgrade is worse
+                                        # than a visible failure.
+                                        try:
+                                            submission = self.encrypt_for_client(ipfs_cid)
+                                        except Exception as enc_err:
+                                            logger.error(
+                                                f"Failed to encrypt weights reference for "
+                                                f"chunk {chunk_cid}: {enc_err}"
+                                            )
+                                            self.submit_hcs_message(
+                                                f"Failed to encrypt weights for chunk {chunk_cid}"
+                                            )
+                                            failed_chunks.append(chunk_cid)
+                                            continue
+
+                                        logger.info(f"=== SUBMITTING TO BLOCKCHAIN ===")
+                                        logger.info(f"Task ID: {self.current_task_id}")
+                                        logger.info(f"Weights CID (local only): {ipfs_cid}")
+                                        logger.info(f"Encrypted payload bytes: {len(submission)}")
+                                        logger.info(f"================================")
+
+                                        # A failed submitWeights call used to
+                                        # propagate out of this loop and abort
+                                        # every remaining chunk for this
+                                        # trainer (leaving the task stuck and
+                                        # its escrow locked). Retry transient
+                                        # Hedera failures, then move on to the
+                                        # next chunk regardless.
+                                        submitted = False
+                                        for attempt in range(1, 4):
+                                            try:
+                                                self.publish_on_chain(
+                                                    self.current_task_id,
+                                                    submission,
                                                 )
+                                                submitted = True
+                                                break
+                                            except Exception as submit_err:
+                                                logger.error(
+                                                    f"submitWeights attempt {attempt}/3 "
+                                                    f"failed for chunk {chunk_cid}: {submit_err}"
+                                                )
+                                                if attempt < 3:
+                                                    await trio.sleep(2 * attempt)
+                                        if not submitted:
+                                            failed_chunks.append(chunk_cid)
+                                            self.submit_hcs_message(
+                                                f"Failed to submit weights for chunk "
+                                                f"{chunk_cid} after 3 attempts"
+                                            )
                                     else:
                                         msg = (
                                             f"No weights returned for chunk {chunk_cid}"
