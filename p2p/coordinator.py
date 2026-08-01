@@ -188,84 +188,11 @@ class Node:
         self.send_channel, self.receive_channel = trio.open_memory_channel(100)
         self.client = self.setup_client()
         self.contract_id = ContractId.from_string(os.getenv("CONTRACT_ID"))
+        # Set from the `assign` message at the start of each round. There is no
+        # baked-in fallback key on purpose: a hardcoded keypair shared by every
+        # deployment gives no confidentiality at all, since anyone with the
+        # source can decrypt every submission.
         self.client_pub_key = None
-
-        self.client_public_key_pem = """
-        -----BEGIN PUBLIC KEY-----
-        MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3j3T45jqsaVD9cCEWHmz
-        jlpUBwY5TtAPyTOcVryQpHpNYpd/wS8g5LwnJPM0/4/J+8sIuWxBiFsmjoSETc6V
-        pTE1adnIzrY6H4Qbl7YerMNMwE2Q1DzQ6w1KsdiGSgEtzAUgAIq8sDqIQ/xxRdgL
-        dKb1X7bwO3rK6QDVaJZ2oibS4xiS1+rslTJlW4MESzKLzWaU7ugnJ+VRaumQ/XrC
-        KlFsg7lFwirDSkYG7cA9cLl8lzNpZJfjoWbUnpKPOTTUslMVVUdRS/jwhVE4LTxS
-        WBBXaRuB52jj7N+XKUHu1/cTJvmLaTBo+VMV+MjzKcmqBnmUaHt0WFVIHSCXjqEU
-        YQIDAQAB
-        -----END PUBLIC KEY-----
-        """
-
-        self.client_public_key = serialization.load_pem_public_key(
-            self.client_public_key_pem.encode("utf-8"), backend=default_backend()
-        )
-
-        # cipher = self.client_public_key.encrypt(
-        #     "FUck you jinesh".encode("utf-8"),
-        #     padding.OAEP(
-        #         mgf=padding.MGF1(algorithm=hashes.SHA256()),
-        #         algorithm=hashes.SHA256(),
-        #         label=None
-        #     )
-        # )
-        # cipher_b64_1 = base64.b64encode(cipher).decode("utf-8")
-
-        # print(cipher_b64_1)
-
-        # url = "https://o3-rc2.akave.xyz/akave-bucket/f402e7f71a64441ec8c4ff2567d1dae9451b98c8bf34f625aa11f8e018ecc3f7?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=O3_X84UVYSPJINK5KI6L%2F20250926%2Fakave-network%2Fs3%2Faws4_request&X-Amz-Date=20250926T095000Z&X-Amz-Expires=36000000&X-Amz-SignedHeaders=host&X-Amz-Signature=84ed4a65601fb990f653809101c88c30ebfb8163a482f5bf8b62734317ab5ba8"
-        # print(url)
-        # url_bytes = url.encode("utf-8")
-        # print("\n\n")
-        # print(url_bytes)
-
-        # # Split in two halves
-        # part_size = len(url_bytes) // 3
-        # part1 = url_bytes[:part_size]
-        # part2 = url_bytes[part_size:2*part_size]
-        # part3 = url_bytes[2*part_size:]
-
-        # cipher1 = self.client_public_key.encrypt(
-        #     part1,
-        #     padding.OAEP(
-        #         mgf=padding.MGF1(algorithm=hashes.SHA256()),
-        #         algorithm=hashes.SHA256(),
-        #         label=None
-        #     )
-        # )
-
-        # cipher2 = self.client_public_key.encrypt(
-        #     part2,
-        #     padding.OAEP(
-        #         mgf=padding.MGF1(algorithm=hashes.SHA256()),
-        #         algorithm=hashes.SHA256(),
-        #         label=None
-        #     )
-        # )
-
-        # cipher3 = self.client_public_key.encrypt(
-        #     part3,
-        #     padding.OAEP(
-        #         mgf=padding.MGF1(algorithm=hashes.SHA256()),
-        #         algorithm=hashes.SHA256(),
-        #         label=None
-        #     )
-        # )
-
-        # cipher_b64_1 = base64.b64encode(cipher1).decode("utf-8")
-        # cipher_b64_2 = base64.b64encode(cipher2).decode("utf-8")
-        # cipher_b64_3 = base64.b64encode(cipher3).decode("utf-8")
-
-        # print(cipher_b64_1)
-        # print("\n\n")
-        # print(cipher_b64_2)
-        # print("\n\n")
-        # print(cipher_b64_3)
 
     def setup_client(self):
         """Initialize and set up the client with operator account"""

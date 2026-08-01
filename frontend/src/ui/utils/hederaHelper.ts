@@ -8,12 +8,7 @@ import {
 import axios from 'axios';
 import Web3 from 'web3';
 import { abi } from './abi';
-import {
-  OPERATOR_ID,
-  OPERATOR_KEY,
-  CONTRACT_ID,
-  privateKeyPem,
-} from './constant';
+import { OPERATOR_ID, OPERATOR_KEY, CONTRACT_ID } from './constant';
 import { PrivateKey } from '@hashgraph/sdk';
 
 export interface WeightEntry {
