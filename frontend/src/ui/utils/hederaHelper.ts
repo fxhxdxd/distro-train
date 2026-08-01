@@ -9,6 +9,7 @@ import axios from 'axios';
 import Web3 from 'web3';
 import { abi } from './abi';
 import { OPERATOR_ID, OPERATOR_KEY, CONTRACT_ID } from './constant';
+import { importRoundPrivateKey } from './sessionKeys';
 import { PrivateKey } from '@hashgraph/sdk';
 
 export interface WeightEntry {
@@ -127,42 +128,62 @@ function decodeEvent(eventName: string, log: any) {
   return decodedLog;
 }
 
-async function decryptMessage(base64Ciphertext: any, privateKeyPem: any) {
-  function base64ToArrayBuffer(base64: any) {
-    const binaryString = atob(base64);
-    const len = binaryString.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-    return bytes.buffer;
-  }
+/** Wire prefix the trainer stamps on an encrypted submission. */
+const ENCRYPTED_PAYLOAD_PREFIX = 'v1';
 
-  function pemToArrayBuffer(pem: any) {
-    const b64Lines = pem.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '');
-    return base64ToArrayBuffer(b64Lines);
-  }
+function base64ToBytes(base64: string): Uint8Array {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
 
-  const keyBuffer = pemToArrayBuffer(privateKeyPem);
-  const privateKey = await crypto.subtle.importKey(
-    'pkcs8',
-    keyBuffer,
-    { name: 'RSA-OAEP', hash: 'SHA-256' },
+/**
+ * True when `value` is an encrypted submission rather than a bare CID.
+ *
+ * Rounds that ran before encryption landed still have plaintext CIDs in their
+ * event logs, and those have to keep working, so the format is sniffed rather
+ * than assumed.
+ */
+export function isEncryptedPayload(value: string): boolean {
+  const parts = value.trim().split('.');
+  return parts.length === 4 && parts[0] === ENCRYPTED_PAYLOAD_PREFIX;
+}
+
+/**
+ * Decrypt a `v1.<wrappedKey>.<iv>.<ciphertext>` submission.
+ *
+ * Unwraps the AES-256-GCM key with RSA-OAEP, then decrypts the payload. GCM
+ * verifies its tag during decrypt, so a tampered or truncated payload throws
+ * here instead of returning a plausible-looking wrong CID.
+ */
+export async function decryptSubmission(
+  payload: string,
+  privateKey: CryptoKey
+): Promise<string> {
+  const [, wrappedKeyB64, ivB64, ciphertextB64] = payload.trim().split('.');
+
+  const rawAesKey = await crypto.subtle.decrypt(
+    { name: 'RSA-OAEP' },
+    privateKey,
+    base64ToBytes(wrappedKeyB64)
+  );
+
+  const aesKey = await crypto.subtle.importKey(
+    'raw',
+    rawAesKey,
+    { name: 'AES-GCM' },
     false,
     ['decrypt']
   );
 
-  const ciphertext = base64ToArrayBuffer(base64Ciphertext);
-  console.log('ciphertext ', ciphertext);
-
-  const decrypted = await crypto.subtle.decrypt(
-    { name: 'RSA-OAEP' },
-    privateKey,
-    ciphertext
+  const plaintext = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: base64ToBytes(ivB64) },
+    aesKey,
+    base64ToBytes(ciphertextB64)
   );
-  console.log('decrypted: ', decrypted);
 
-  return new TextDecoder().decode(decrypted);
+  return new TextDecoder().decode(plaintext);
 }
 
 export async function generatePresignedUrl(hash: string): Promise<string | null> {
@@ -243,6 +264,13 @@ export async function fetchWeightsSubmittedEvent(
   const foundWeights: WeightEntry[] = [];
   const seenCids = new Set<string>();
 
+  // Loaded once per scan rather than per log. Null for rounds that predate
+  // encrypted submissions, which still carry plaintext CIDs.
+  const privateKey = await importRoundPrivateKey(taskId).catch((err) => {
+    console.error(`Could not load round key for task ${taskId}:`, err);
+    return null;
+  });
+
   // Paginate through ALL contract logs (newest → oldest).
   // We stop early once we encounter the TaskCreated event for this task,
   // because no WeightsSubmitted events for this task can appear after that
@@ -286,7 +314,33 @@ export async function fetchWeightsSubmittedEvent(
               ? weightsHash.split(',').map((h) => h.trim()).filter(Boolean)
               : [weightsHash.trim()];
 
-            for (const h of hashes) {
+            for (const raw of hashes) {
+              // Decrypt BEFORE deduping. RSA-OAEP is randomised, so the same
+              // CID encrypts to a different payload every time and deduping on
+              // the ciphertext would never match.
+              let h = raw;
+              if (isEncryptedPayload(raw)) {
+                if (!privateKey) {
+                  console.warn(
+                    `Task ${taskId}: encrypted submission but no round key ` +
+                      `available, skipping. The key is stored per task when ` +
+                      `training starts and cannot be recovered if lost.`
+                  );
+                  continue;
+                }
+                try {
+                  h = await decryptSubmission(raw, privateKey);
+                } catch (err) {
+                  // A GCM tag failure means the payload was tampered with, or
+                  // it was encrypted to a different key than this round's.
+                  console.error(
+                    `Failed to decrypt a submission for task ${taskId}:`,
+                    err
+                  );
+                  continue;
+                }
+              }
+
               const cid = extractCid(h);
               if (seenCids.has(cid)) {
                 console.log(`Skipping duplicate CID: ${cid}`);
